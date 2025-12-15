@@ -25,3 +25,9 @@ npx expo start
 ```
 
 Then press `i` for iOS simulator or `a` for Android emulator.
+
+## Progress Log
+
+- 15 Dec 2025: Base mountain and trail
+![](common/progress-demo-1.png)
+

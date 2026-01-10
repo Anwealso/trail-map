@@ -7,9 +7,9 @@ import {
   TOPOMAP_WORLD_SIZE_Y,
   TOPOMAP_WORLD_SIZE_Z,
   WORLD_TO_GAME_HEIGHT_SCALE_RATIO,
-  GAMEWORLD_RESOLUTION,
-  TOPOMAP_GAME_SIZE_LIMIT_X,
-  TOPOMAP_GAME_SIZE_LIMIT_Y,
+  // GAMEWORLD_RESOLUTION,
+  // TOPOMAP_GAME_SIZE_LIMIT_X,
+  // TOPOMAP_GAME_SIZE_LIMIT_Y,
 } from './constants'
 
 
@@ -149,7 +149,7 @@ export interface TerrainHeightSampler {
  * Creates a TerrainHeightSampler from ImageData.
  * This is a helper function that can be used when you already have ImageData.
  */
-function createTerrainHeightSamplerFromImageData(
+export function createTerrainHeightSamplerFromImageData(
   imageData: ImageData
 ): TerrainHeightSampler {
   const pointMatrix = createPointMatrixFromHeightmap(imageData)
@@ -210,6 +210,7 @@ function createTerrainHeightSamplerFromImageData(
     },
 
     getGameHeight(coordinate: Coordinate): number {
+      console.log(sampleWorldHeight(coordinate));
       return sampleWorldHeight(coordinate) * WORLD_TO_GAME_HEIGHT_SCALE_RATIO
     },
   }
@@ -221,67 +222,3 @@ export async function createTerrainHeightSampler(
   const imageData = await loadHeightmapImage(heightmapUrl)
   return createTerrainHeightSamplerFromImageData(imageData)
 }
-
-
-/**
- * Creates a Three.js PlaneGeometry from heightmap image data using TerrainHeightSampler.
- * The geometry is sized to match the game world dimensions (1x1 game units) and uses
- * GAMEWORLD_RESOLUTION to determine the mesh density.
- * 
- * @param imageData - The heightmap image data
- * @returns A Three.js PlaneGeometry with heights sampled from the terrain heightmap
- */
-export function createHeightmapGeometry(
-  imageData: ImageData,
-  // options: HeightmapOptions = {}
-): THREE.PlaneGeometry {
-
-  // Create a sampler from the image data
-  const sampler = createTerrainHeightSamplerFromImageData(imageData)
-
-  // The mesh is sized to fit within 1x1 game units (as per TOPOMAP_GAME_SIZE_LIMIT constants)
-  // GAMEWORLD_RESOLUTION determines how many segments we have per game unit
-  const gameWidth = TOPOMAP_GAME_SIZE_LIMIT_X
-  const gameDepth = TOPOMAP_GAME_SIZE_LIMIT_Y
-  const segmentsX = GAMEWORLD_RESOLUTION * gameWidth
-  const segmentsZ = GAMEWORLD_RESOLUTION * gameDepth
-
-  // Create the plane geometry with the calculated resolution
-  const geometry = new THREE.PlaneGeometry(gameWidth, gameDepth, segmentsX, segmentsZ)
-  geometry.rotateX(-Math.PI / 2)
-
-  const positions = geometry.attributes.position
-
-  // Sample heights at each vertex using game coordinates
-  for (let i = 0; i < positions.count; i++) {
-    const gameX = positions.getX(i)
-    const gameY = positions.getZ(i) // In Three.js, Z is the depth axis after rotation
-
-    // Create a coordinate from game coordinates
-    const coordinate = Coordinate.fromGameCoords(gameX, gameY)
-
-    // Sample the height in game units, then apply height scale
-    const gameHeight = sampler.getGameHeight(coordinate)
-
-    // Set the Y position (height) in game units
-    positions.setY(i, gameHeight)
-  }
-
-  geometry.computeVertexNormals()
-  return geometry
-}
-
-export async function createHeightmapMesh(
-  imageUrl: string,
-  material?: THREE.Material
-): Promise<THREE.Mesh> {
-  const imageData = await loadHeightmapImage(imageUrl)
-  const geometry = createHeightmapGeometry(imageData)
-  const mat = material ?? new THREE.MeshStandardMaterial({
-    color: 0x88aa88,
-    wireframe: false,
-    flatShading: false,
-  })
-  return new THREE.Mesh(geometry, mat)
-}
-

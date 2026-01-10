@@ -2,11 +2,6 @@ import { useEffect, useState } from 'react'
 import * as THREE from 'three'
 import { 
   loadHeightmapImage, 
-  applyGaussianBlur, 
-  GAUSSIAN_ENABLED, 
-  GAUSSIAN_KERNEL_SIZE, 
-  GAUSSIAN_SIGMA,
-  MESH_RESOLUTION
 } from '../utils/heightmapToMesh'
 
 const TRAIL_HEIGHT_OFFSET = 0
@@ -20,6 +15,11 @@ interface TrailProps {
   heightScale: number
 }
 
+/**
+ * Load in trail csv coordinates in world units (world kilometres)
+ * @param url 
+ * @returns 
+ */
 async function loadTrailCSV(url: string): Promise<{ x: number; y: number }[]> {
   const response = await fetch(url)
   const text = await response.text()
@@ -29,14 +29,6 @@ async function loadTrailCSV(url: string): Promise<{ x: number; y: number }[]> {
     const [x, y] = line.split(',').map(Number)
     return { x, y }
   })
-}
-
-function hermiteFade(t: number): number {
-  return t * t * (3 - 2 * t)
-}
-
-function lerp(a: number, b: number, t: number): number {
-  return a + (b - a) * t
 }
 
 function sampleHeightAtGridPoint(

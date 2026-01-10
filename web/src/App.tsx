@@ -6,12 +6,8 @@ import { Trail } from './components/Trail'
 import { Pin } from './components/Pin'
 import { createTerrainHeightSampler, TerrainHeightSampler } from './utils/heightmapToMesh'
 
-const TERRAIN_WIDTH = 10
-const TERRAIN_DEPTH = 10
-const HEIGHT_SCALE = 3
-
 export default function App() {
-  const [pinPosition, setPinPosition] = useState({ x: 0.5, y: 0.5 })
+  const [pinPosition, setPinPosition] = useState({ x: -2, y: 3 }) // world coordinates in kilometers
   const [heightSampler, setHeightSampler] = useState<TerrainHeightSampler | null>(null)
 
   useEffect(() => {
@@ -25,28 +21,31 @@ export default function App() {
       <ambientLight intensity={0.5} />
       <directionalLight position={[10, 10, 5]} intensity={1} />
       <axesHelper args={[2]} />
-      <Terrain 
-        heightmapUrl="/heightmap.jpg" 
+      {heightSampler && (
+        <Terrain
+          heightSampler={heightSampler}
+        /* heightmapUrl="/heightmap.jpg" 
         width={TERRAIN_WIDTH} 
         depth={TERRAIN_DEPTH} 
-        heightScale={HEIGHT_SCALE} 
-      />
+        heightScale={HEIGHT_SCALE} */
+        />
+      )}
       {/* <Trail
         csvUrl="/trail.csv"
         heightmapUrl="/heightmap.jpg"
         terrainWidth={TERRAIN_WIDTH}
         terrainDepth={TERRAIN_DEPTH}
         heightScale={HEIGHT_SCALE}
-      />
+      /> */}
       {heightSampler && (
         <Pin
           x={pinPosition.x}
           y={pinPosition.y}
           heightSampler={heightSampler}
           color="#ff4444"
-          radius={0.15}
+          // radius={2}
         />
-      )} */}
+      )}
       <OrbitControls />
     </Canvas>
   )

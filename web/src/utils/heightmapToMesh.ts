@@ -1,62 +1,18 @@
 import * as THREE from 'three'
 
-export const MESH_RESOLUTION = 1024
+import { Point } from './Point'
+import { Coordinate } from './Coordinate'
+import {
+  TOPOMAP_WORLD_SIZE_X,
+  TOPOMAP_WORLD_SIZE_Y,
+  TOPOMAP_WORLD_SIZE_Z,
+  WORLD_TO_GAME_HEIGHT_SCALE_RATIO,
+  GAMEWORLD_RESOLUTION,
+  TOPOMAP_GAME_SIZE_LIMIT_X,
+  TOPOMAP_GAME_SIZE_LIMIT_Y,
+} from './constants'
 
-export const GAUSSIAN_ENABLED = true
-export const GAUSSIAN_KERNEL_SIZE = 5
-export const GAUSSIAN_SIGMA = 1.5
 
-function generateGaussianKernel(size: number, sigma: number): Float32Array {
-  const kernel = new Float32Array(size * size)
-  const center = Math.floor(size / 2)
-  let sum = 0
-
-  for (let y = 0; y < size; y++) {
-    for (let x = 0; x < size; x++) {
-      const dx = x - center
-      const dy = y - center
-      const value = Math.exp(-(dx * dx + dy * dy) / (2 * sigma * sigma))
-      kernel[y * size + x] = value
-      sum += value
-    }
-  }
-
-  for (let i = 0; i < kernel.length; i++) {
-    kernel[i] /= sum
-  }
-
-  return kernel
-}
-
-export function applyGaussianBlur(
-  data: Float32Array,
-  width: number,
-  height: number,
-  kernelSize: number,
-  sigma: number
-): Float32Array {
-  const kernel = generateGaussianKernel(kernelSize, sigma)
-  const result = new Float32Array(data.length)
-  const halfKernel = Math.floor(kernelSize / 2)
-
-  for (let y = 0; y < height; y++) {
-    for (let x = 0; x < width; x++) {
-      let sum = 0
-
-      for (let ky = 0; ky < kernelSize; ky++) {
-        for (let kx = 0; kx < kernelSize; kx++) {
-          const sx = Math.min(Math.max(x + kx - halfKernel, 0), width - 1)
-          const sy = Math.min(Math.max(y + ky - halfKernel, 0), height - 1)
-          sum += data[sy * width + sx] * kernel[ky * kernelSize + kx]
-        }
-      }
-
-      result[y * width + x] = sum
-    }
-  }
-
-  return result
-}
 
 export interface HeightmapOptions {
   width?: number
@@ -74,7 +30,16 @@ function lerp(a: number, b: number, t: number): number {
   return a + (b - a) * t
 }
 
-function sampleHeightBilinear(
+/**
+ * Samples a height value from the heightmap using bilinear interpolation with Hermite smoothing.
+ * @param data - The heightmap data as a flat Float32Array
+ * @param imgWidth - Width of the heightmap in pixels
+ * @param imgHeight - Height of the heightmap in pixels
+ * @param u - Horizontal coordinate in normalized [0, 1] range
+ * @param v - Vertical coordinate in normalized [0, 1] range
+ * @returns The interpolated height value at the given UV coordinates
+ */
+export function sampleHeightBilinear(
   data: Float32Array,
   imgWidth: number,
   imgHeight: number,
@@ -103,52 +68,6 @@ function sampleHeightBilinear(
   return lerp(top, bottom, ty)
 }
 
-export function createHeightmapGeometry(
-  imageData: ImageData,
-  options: HeightmapOptions = {}
-): THREE.PlaneGeometry {
-  const {
-    width = 10,
-    depth = 10,
-    heightScale = 2,
-    segmentsX = MESH_RESOLUTION,
-    segmentsZ = MESH_RESOLUTION,
-  } = options
-
-  const geometry = new THREE.PlaneGeometry(width, depth, segmentsX, segmentsZ)
-  geometry.rotateX(-Math.PI / 2)
-
-  const positions = geometry.attributes.position
-  const imgWidth = imageData.width
-  const imgHeight = imageData.height
-
-  let heightData = new Float32Array(imgWidth * imgHeight)
-  for (let y = 0; y < imgHeight; y++) {
-    for (let x = 0; x < imgWidth; x++) {
-      const idx = (y * imgWidth + x) * 4
-      heightData[y * imgWidth + x] = imageData.data[idx] / 255
-    }
-  }
-
-  if (GAUSSIAN_ENABLED) {
-    heightData = applyGaussianBlur(heightData, imgWidth, imgHeight, GAUSSIAN_KERNEL_SIZE, GAUSSIAN_SIGMA)
-  }
-
-  for (let i = 0; i < positions.count; i++) {
-    const x = positions.getX(i)
-    const z = positions.getZ(i)
-
-    const u = x / width + 0.5
-    const v = z / depth + 0.5
-
-    const height = sampleHeightBilinear(heightData, imgWidth, imgHeight, u, v)
-    positions.setY(i, height * heightScale)
-  }
-
-  geometry.computeVertexNormals()
-  return geometry
-}
-
 export async function loadHeightmapImage(url: string): Promise<ImageData> {
   return new Promise((resolve, reject) => {
     const img = new Image()
@@ -170,13 +89,194 @@ export async function loadHeightmapImage(url: string): Promise<ImageData> {
   })
 }
 
+
+/**
+ * Creates a 2D matrix of Point objects from heightmap image data.
+ * Converts pixel coordinates to world coordinates using TOPOMAP_WORLD_SIZE constants.
+ * @param imageData - The heightmap image data
+ * @returns A 2D array of Point objects where [row][col] corresponds to [y][x] in the image
+ */
+export function createPointMatrixFromHeightmap(
+  imageData: ImageData,
+): Point[][] {
+  const imgWidth = imageData.width
+  const imgHeight = imageData.height
+
+  const matrix: Point[][] = []
+
+  for (let iy = 0; iy < imgHeight; iy++) {
+    const row: Point[] = []
+    for (let ix = 0; ix < imgWidth; ix++) {
+      const idx = (iy * imgWidth + ix) * 4
+      const normalizedHeight = imageData.data[idx] / 255 // normalize the B/W value to a 
+        // float between 0 and 1
+
+      const worldX = (ix / imgWidth) * TOPOMAP_WORLD_SIZE_X
+      const worldY = (iy / imgHeight) * TOPOMAP_WORLD_SIZE_Y
+      const worldZ = normalizedHeight * TOPOMAP_WORLD_SIZE_Z
+
+      row.push(Point.fromWorldCoords(worldX, worldY, worldZ))
+    }
+    matrix.push(row)
+  }
+
+  return matrix
+}
+
+/**
+ * Interface for sampling terrain height at coordinates.
+ * Works with Coordinate objects, supporting both world and game coordinate systems for output.
+ */
+export interface TerrainHeightSampler {
+  /**
+   * Gets the interpolated terrain height at the given coordinate.
+   * The coordinate can be set using either world or game coordinates (via Coordinate.worldX/worldY or Coordinate.gameX/gameY).
+   * @param coordinate - Coordinate object representing the position
+   * @returns The terrain height in world units
+   */
+  getWorldHeight: (coordinate: Coordinate) => number
+
+  /**
+   * Gets the interpolated terrain height at the given coordinate.
+   * The coordinate can be set using either world or game coordinates (via Coordinate.worldX/worldY or Coordinate.gameX/gameY).
+   * @param coordinate - Coordinate object representing the position
+   * @returns The terrain height in game units
+   */
+  getGameHeight: (coordinate: Coordinate) => number
+}
+
+/**
+ * Creates a TerrainHeightSampler from ImageData.
+ * This is a helper function that can be used when you already have ImageData.
+ */
+function createTerrainHeightSamplerFromImageData(
+  imageData: ImageData
+): TerrainHeightSampler {
+  const pointMatrix = createPointMatrixFromHeightmap(imageData)
+  const imgWidth = imageData.width
+  const imgHeight = imageData.height
+
+  /**
+   * Samples the terrain height at a given coordinate using bilinear interpolation with smooth blending.
+   * 
+   * Think of the heightmap as a grid of height values (like a checkerboard where each square has a height).
+   * When you ask for the height at any point between those grid squares, this function finds the 4 nearest
+   * grid points that form a square around your position, then smoothly blends between their heights.
+   * 
+   * The process works in two steps:
+   * 1. Horizontal blending: It blends between the two heights along the top edge of the square,
+   *    and separately blends between the two heights along the bottom edge.
+   * 2. Vertical blending: It then blends between those two resulting heights.
+   * 
+   * The Hermite fade function ensures the blending is smooth (no sudden jumps) rather than linear,
+   * making the terrain transitions appear more natural.
+   * 
+   * @param coordinate - The coordinate where you want to know the terrain height
+   * @returns The interpolated height value in world units
+   */
+  function sampleWorldHeight(coordinate: Coordinate): number {
+    // Coordinate internally stores world coordinates, so we can use worldX and worldY directly
+    const worldX = coordinate.worldX
+    const worldY = coordinate.worldY
+
+    const u = worldX / TOPOMAP_WORLD_SIZE_X + 0.5
+    const v = worldY / TOPOMAP_WORLD_SIZE_Y + 0.5
+
+    const px = u * (imgWidth - 1)
+    const py = v * (imgHeight - 1)
+
+    const x0 = Math.floor(px)
+    const y0 = Math.floor(py)
+    const x1 = Math.min(x0 + 1, imgWidth - 1)
+    const y1 = Math.min(y0 + 1, imgHeight - 1)
+
+    const tx = hermiteFade(px - x0)
+    const ty = hermiteFade(py - y0)
+
+    const v00 = pointMatrix[y0][x0].worldZ
+    const v10 = pointMatrix[y0][x1].worldZ
+    const v01 = pointMatrix[y1][x0].worldZ
+    const v11 = pointMatrix[y1][x1].worldZ
+
+    const top = lerp(v00, v10, tx)
+    const bottom = lerp(v01, v11, tx)
+
+    return lerp(top, bottom, ty)
+  }
+
+  return {
+    getWorldHeight(coordinate: Coordinate): number {
+      return sampleWorldHeight(coordinate)
+    },
+
+    getGameHeight(coordinate: Coordinate): number {
+      return sampleWorldHeight(coordinate) * WORLD_TO_GAME_HEIGHT_SCALE_RATIO
+    },
+  }
+}
+
+export async function createTerrainHeightSampler(
+  heightmapUrl: string
+): Promise<TerrainHeightSampler> {
+  const imageData = await loadHeightmapImage(heightmapUrl)
+  return createTerrainHeightSamplerFromImageData(imageData)
+}
+
+
+/**
+ * Creates a Three.js PlaneGeometry from heightmap image data using TerrainHeightSampler.
+ * The geometry is sized to match the game world dimensions (1x1 game units) and uses
+ * GAMEWORLD_RESOLUTION to determine the mesh density.
+ * 
+ * @param imageData - The heightmap image data
+ * @returns A Three.js PlaneGeometry with heights sampled from the terrain heightmap
+ */
+export function createHeightmapGeometry(
+  imageData: ImageData,
+  // options: HeightmapOptions = {}
+): THREE.PlaneGeometry {
+
+  // Create a sampler from the image data
+  const sampler = createTerrainHeightSamplerFromImageData(imageData)
+
+  // The mesh is sized to fit within 1x1 game units (as per TOPOMAP_GAME_SIZE_LIMIT constants)
+  // GAMEWORLD_RESOLUTION determines how many segments we have per game unit
+  const gameWidth = TOPOMAP_GAME_SIZE_LIMIT_X
+  const gameDepth = TOPOMAP_GAME_SIZE_LIMIT_Y
+  const segmentsX = GAMEWORLD_RESOLUTION * gameWidth
+  const segmentsZ = GAMEWORLD_RESOLUTION * gameDepth
+
+  // Create the plane geometry with the calculated resolution
+  const geometry = new THREE.PlaneGeometry(gameWidth, gameDepth, segmentsX, segmentsZ)
+  geometry.rotateX(-Math.PI / 2)
+
+  const positions = geometry.attributes.position
+
+  // Sample heights at each vertex using game coordinates
+  for (let i = 0; i < positions.count; i++) {
+    const gameX = positions.getX(i)
+    const gameY = positions.getZ(i) // In Three.js, Z is the depth axis after rotation
+
+    // Create a coordinate from game coordinates
+    const coordinate = Coordinate.fromGameCoords(gameX, gameY)
+
+    // Sample the height in game units, then apply height scale
+    const gameHeight = sampler.getGameHeight(coordinate)
+
+    // Set the Y position (height) in game units
+    positions.setY(i, gameHeight)
+  }
+
+  geometry.computeVertexNormals()
+  return geometry
+}
+
 export async function createHeightmapMesh(
   imageUrl: string,
-  options: HeightmapOptions = {},
   material?: THREE.Material
 ): Promise<THREE.Mesh> {
   const imageData = await loadHeightmapImage(imageUrl)
-  const geometry = createHeightmapGeometry(imageData, options)
+  const geometry = createHeightmapGeometry(imageData)
   const mat = material ?? new THREE.MeshStandardMaterial({
     color: 0x88aa88,
     wireframe: false,
@@ -184,3 +284,4 @@ export async function createHeightmapMesh(
   })
   return new THREE.Mesh(geometry, mat)
 }
+

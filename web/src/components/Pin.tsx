@@ -17,7 +17,7 @@ export function Pin({
   x,
   y,
   heightSampler,
-  color = '#ff0000',
+  color = '#d83d28',
   radius = 0.1, // radius in game units
 }: PinProps) {
   const [position, setPosition] = useState<THREE.Vector3 | null>(null)
@@ -49,10 +49,23 @@ export function Pin({
 
   if (!position) return null
 
+  // Calculate sphere radius that fits inside cone
+  const coneAngle = Math.atan(radius / height)
+  const sphereRadius = radius / Math.cos(coneAngle)
+  const sphereOffset = height/2 + (sphereRadius * Math.sin(coneAngle))
+
   return (
-    <mesh position={position} rotation={[Math.PI, 0, 0]}>
-      <coneGeometry args={[radius, height, 16]} />
-      <meshStandardMaterial color={color} />
-    </mesh>
+    <group position={position}>
+      {/* Cone pin */}
+      <mesh rotation={[Math.PI, 0, 0]}>
+        <coneGeometry args={[radius, height, 16]} />
+        <meshStandardMaterial color={color} />
+      </mesh>
+      {/* Sphere that fits inside cone */}
+      <mesh position={[0, sphereOffset, 0]}>
+        <sphereGeometry args={[sphereRadius, 16, 16, 0, 2*Math.PI, 0, (Math.PI-coneAngle)]} />
+        <meshStandardMaterial color={color} />
+      </mesh>
+    </group>
   )
 }

@@ -6,10 +6,6 @@ import { Coordinate } from '../utils/Coordinate'
 
 interface TerrainProps {
   heightSampler: TerrainHeightSampler
-  // heightmapUrl: string
-  // width?: number
-  // depth?: number
-  // heightScale?: number
 }
 
 /**
@@ -23,35 +19,25 @@ interface TerrainProps {
 function createHeightmapGeometry(
   sampler: TerrainHeightSampler
   // options: HeightmapOptions = {}
-): THREE.PlaneGeometry {
-
-  // Create a sampler from the image data
-  // const sampler = createTerrainHeightSamplerFromImageData(imageData)
-
-  // The mesh is sized to fit within 1x1 game units (as per TOPOMAP_GAME_SIZE_LIMIT constants)
+): THREE.BufferGeometry {
+  // The mesh is sized to fit within the TOPOMAP_GAME_SIZE_LIMIT constants size
   // GAMEWORLD_RESOLUTION determines how many segments we have per game unit
-  const gameWidth = TOPOMAP_GAME_SIZE_LIMIT_X
-  const gameDepth = TOPOMAP_GAME_SIZE_LIMIT_Y
-  const segmentsX = GAMEWORLD_RESOLUTION * gameWidth
-  const segmentsZ = GAMEWORLD_RESOLUTION * gameDepth
+  const segmentsX = GAMEWORLD_RESOLUTION * TOPOMAP_GAME_SIZE_LIMIT_X
+  const segmentsZ = GAMEWORLD_RESOLUTION * TOPOMAP_GAME_SIZE_LIMIT_Y
 
   // Create the plane geometry with the calculated resolution
-  const geometry = new THREE.PlaneGeometry(gameWidth, gameDepth, segmentsX, segmentsZ)
+  const geometry = new THREE.PlaneGeometry(TOPOMAP_GAME_SIZE_LIMIT_X, TOPOMAP_GAME_SIZE_LIMIT_Y, segmentsX, segmentsZ)
   geometry.rotateX(-Math.PI / 2)
-
   const positions = geometry.attributes.position
 
   // Sample heights at each vertex using game coordinates
   for (let i = 0; i < positions.count; i++) {
     const gameX = positions.getX(i)
     const gameY = positions.getZ(i) // In Three.js, Z is the depth axis after rotation
-
     // Create a coordinate from game coordinates
     const coordinate = Coordinate.fromGameCoords(gameX, gameY)
-
     // Sample the height in game units, then apply height scale
     const gameHeight = sampler.getGameHeight(coordinate)
-
     // Set the Y position (height) in game units
     positions.setY(i, gameHeight)
   }
@@ -60,27 +46,10 @@ function createHeightmapGeometry(
   return geometry
 }
 
-// async function createHeightmapMesh(
-//   imageUrl: string,
-//   material?: THREE.Material
-// ): Promise<THREE.Mesh> {
-//   const imageData = await loadHeightmapImage(imageUrl)
-//   const geometry = createHeightmapGeometry(imageData)
-//   const mat = material ?? new THREE.MeshStandardMaterial({
-//     color: 0x88aa88,
-//     wireframe: false,
-//     flatShading: false,
-//   })
-//   return new THREE.Mesh(geometry, mat)
-// }
-
 export function Terrain({ 
   heightSampler,
-  // width = 10, 
-  // depth = 10, 
-  // heightScale = 3,
 }: TerrainProps) {
-  const [geometry, setGeometry] = useState<THREE.PlaneGeometry | null>(null)
+  const [geometry, setGeometry] = useState<THREE.BufferGeometry | null>(null)
 
   useEffect(() => {
       const geo = createHeightmapGeometry(heightSampler)
@@ -92,7 +61,7 @@ export function Terrain({
   return (
     <mesh geometry={geometry}>
       <meshStandardMaterial 
-        color="#88aa88" 
+        color={"#b0e67e"}
         side={THREE.DoubleSide}
       />
     </mesh>

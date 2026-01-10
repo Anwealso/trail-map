@@ -24,26 +24,21 @@ export default function App() {
       {heightSampler && (
         <Terrain
           heightSampler={heightSampler}
-        /* heightmapUrl="/heightmap.jpg" 
-        width={TERRAIN_WIDTH} 
-        depth={TERRAIN_DEPTH} 
-        heightScale={HEIGHT_SCALE} */
         />
       )}
-      {/* <Trail
-        csvUrl="/trail.csv"
-        heightmapUrl="/heightmap.jpg"
-        terrainWidth={TERRAIN_WIDTH}
-        terrainDepth={TERRAIN_DEPTH}
-        heightScale={HEIGHT_SCALE}
-      /> */}
+      {heightSampler && (
+        <Trail
+          csvUrl="/trail.csv"
+          heightSampler={heightSampler}
+        />
+      )}
       {heightSampler && (
         <Pin
           x={pinPosition.x}
           y={pinPosition.y}
           heightSampler={heightSampler}
           color="#ff4444"
-          // radius={2}
+          radius={0.2}
         />
       )}
       <OrbitControls />

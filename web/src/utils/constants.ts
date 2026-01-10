@@ -5,9 +5,9 @@ export const TOPOMAP_WORLD_SIZE_Y = 10 // world units (kilometres)
 export const TOPOMAP_WORLD_SIZE_Z = 10 // world units (kilometres)
 
 // The size limits of the heightmap terrain in game units (will be scaled to fit within these limits)
-export const TOPOMAP_GAME_SIZE_LIMIT_X = 1 // game units
-export const TOPOMAP_GAME_SIZE_LIMIT_Y = 1 // game units
-export const TOPOMAP_GAME_SIZE_LIMIT_Z = 1 // game units
+export const TOPOMAP_GAME_SIZE_LIMIT_X = 10 // game units
+export const TOPOMAP_GAME_SIZE_LIMIT_Y = 10 // game units
+export const TOPOMAP_GAME_SIZE_LIMIT_Z = 3 // game units
 
 // Get the scaling factor for units from world to game and vice versa
 // First check which dimension is the limiting factor
@@ -25,4 +25,4 @@ export const GAME_TO_WORLD_SCALE_RATIO = 1 / world_to_game_scale_ratio
 export const GAME_TO_WORLD_HEIGHT_SCALE_RATIO = TOPOMAP_WORLD_SIZE_Z / TOPOMAP_GAME_SIZE_LIMIT_Z
 
 // Note: For now, the heightmap mesh will always be sized to fit within the gameworld dims of 1m x 1m
-export const GAMEWORLD_RESOLUTION = 10 // the number of points in our mesh per gameworld 1 "metre" unit
+export const GAMEWORLD_RESOLUTION = 20 // the number of points in our mesh per gameworld 1 "metre" unit

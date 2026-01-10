@@ -20,7 +20,7 @@ export class Coordinate {
   /**
    * Creates a new Point.
    */
-  private constructor(x: number, y: number) {
+  protected constructor(x: number, y: number) {
     this._worldX = x
     this._worldY = y
   }

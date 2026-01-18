@@ -210,7 +210,6 @@ export function createTerrainHeightSamplerFromImageData(
     },
 
     getGameHeight(coordinate: Coordinate): number {
-      console.log(sampleWorldHeight(coordinate));
       return sampleWorldHeight(coordinate) * WORLD_TO_GAME_HEIGHT_SCALE_RATIO
     },
   }

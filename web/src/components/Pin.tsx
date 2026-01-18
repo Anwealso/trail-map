@@ -30,7 +30,6 @@ export function Pin({
 
     // Create a coordinate from game coordinates and sample the height
     const coordinate = Coordinate.fromWorldCoords(x, y)
-    console.log({coordinate});
     const worldHeight = heightSampler.getWorldHeight(coordinate)
 
     // Create a Point with the sampled height (Point z is vertical height)

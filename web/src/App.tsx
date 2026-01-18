@@ -30,6 +30,7 @@ export default function App() {
         <Trail
           csvUrl="/trail.csv"
           heightSampler={heightSampler}
+          color={'#eaffdc'}
         />
       )}
       {heightSampler && (

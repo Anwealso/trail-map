@@ -22,6 +22,7 @@ export default function App() {
   );
   const [autoRotate, setAutoRotate] = useState(true);
   const autoRotateTimer = useRef<number | null>(null);
+  const [loaded, setLoaded] = useState(false);
 
   useEffect(() => {
     const base = import.meta.env.BASE_URL;
@@ -60,7 +61,22 @@ export default function App() {
   };
 
   return (
-    <Canvas shadows camera={{ position: [8, 8, 8], fov: 50 }}>
+    <>
+      <div
+        style={{
+          position: "fixed",
+          top: 0,
+          left: 0,
+          width: "100%",
+          height: "100%",
+          backgroundColor: "white",
+          zIndex: 1000,
+          opacity: loaded ? 0 : 1,
+          pointerEvents: loaded ? "none" : "auto",
+          transition: "opacity 1s ease-out",
+        }}
+      />
+      <Canvas shadows camera={{ position: [8, 8, 8], fov: 50 }}>
       <Lighting />
 
       {/* <axesHelper args={[2]} /> */}
@@ -71,6 +87,7 @@ export default function App() {
           width={0.1}
           terrainSampler={terrainSampler}
           color={"#fff4bd"}
+          onLoad={() => setLoaded(true)}
         />
       )}
       {terrainSampler && (
@@ -100,6 +117,7 @@ export default function App() {
         onStart={handleInteractionStart}
         onEnd={handleInteractionEnd}
       />
-    </Canvas>
+      </Canvas>
+    </>
   );
 }

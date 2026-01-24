@@ -184,6 +184,7 @@ interface TrailProps {
   width: number;
   terrainSampler: TerrainSampler;
   color: string;
+  onLoad?: () => void;
 }
 
 export function Trail({
@@ -191,6 +192,7 @@ export function Trail({
   width,
   terrainSampler,
   color = "#eaffdc",
+  onLoad,
 }: TrailProps) {
   const [geometry, setGeometry] = useState<THREE.BufferGeometry | null>(null);
 
@@ -210,8 +212,9 @@ export function Trail({
         terrainSampler,
       });
       setGeometry(trailGeometry);
+      onLoad?.();
     });
-  }, [csvUrl, terrainSampler]);
+  }, [csvUrl, terrainSampler, width, onLoad]);
 
   const mat = useMemo(
     () => createClayMaterial({ color, side: THREE.DoubleSide }),

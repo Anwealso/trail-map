@@ -27,6 +27,9 @@ export class Coordinate {
 
   /** Gets the X coordinate in real-world units. */
   get worldX(): number {
+    if (this._worldX === null) {
+      throw new Error("X coordinate has not been initialized");
+    }
     return this._worldX;
   }
 
@@ -37,6 +40,9 @@ export class Coordinate {
 
   /** Gets the Y coordinate in real-world units. */
   get worldY(): number {
+    if (this._worldY === null) {
+      throw new Error("Y coordinate has not been initialized");
+    }
     return this._worldY;
   }
 
@@ -47,6 +53,9 @@ export class Coordinate {
 
   /** Gets the X coordinate in game units. */
   get gameX(): number {
+    if (this._worldX === null) {
+      throw new Error("X coordinate has not been initialized");
+    }
     return this._worldX * WORLD_TO_GAME_SCALE_RATIO;
   }
 
@@ -57,6 +66,9 @@ export class Coordinate {
 
   /** Gets the Y coordinate in game units. */
   get gameY(): number {
+    if (this._worldY === null) {
+      throw new Error("Y coordinate has not been initialized");
+    }
     return this._worldY * WORLD_TO_GAME_SCALE_RATIO;
   }
 

@@ -20,6 +20,9 @@ export class Point extends Coordinate {
 
   /** Gets the Z/height coordinate in real-world units. */
   get worldZ(): number {
+    if (this._worldZ === null) {
+      throw new Error("Z coordinate has not been initialized");
+    }
     return this._worldZ;
   }
 
@@ -30,6 +33,9 @@ export class Point extends Coordinate {
 
   /** Gets the Z/height coordinate in game units. */
   get gameZ(): number {
+    if (this._worldZ === null) {
+      throw new Error("Z coordinate has not been initialized");
+    }
     return this._worldZ * WORLD_TO_GAME_HEIGHT_SCALE_RATIO;
   }
 
@@ -43,6 +49,9 @@ export class Point extends Coordinate {
    * threejs render axes.
    */
   get threeX(): number {
+    if (super.gameX === null) {
+      throw new Error("X coordinate has not been initialized");
+    }
     return this.gameX;
   }
 
@@ -51,6 +60,9 @@ export class Point extends Coordinate {
    * threejs render axes.
    */
   get threeY(): number {
+    if (this._worldZ === null) {
+      throw new Error("Z coordinate has not been initialized");
+    }
     return this.gameZ;
   }
 
@@ -59,6 +71,9 @@ export class Point extends Coordinate {
    * render axes.
    */
   get threeZ(): number {
+    if (super.gameY === null) {
+      throw new Error("Z coordinate has not been initialized");
+    }
     return this.gameY;
   }
 

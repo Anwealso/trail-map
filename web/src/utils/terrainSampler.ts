@@ -14,7 +14,7 @@ export interface TerrainSampler {
    * @param coordinate - Coordinate object representing the 2D position
    * @returns The closest Point from the height mesh (worldX, worldY, worldZ)
    */
-  getClosestMapPoint: (coordinate: Coordinate) => Point;
+  getClosestMapPoint: (coordinate: Coordinate) => Point | null;
 
   /**
    * The matrix of map points to sample from.
@@ -39,7 +39,7 @@ export function createTerrainHeightSamplerFromPointMatrix(
    * @param coordinate - The 2D position (world or game coords via Coordinate)
    * @returns The closest Point from mapPoints (3D: worldX, worldY, worldZ)
    */
-  function getClosestMapPoint(coordinate: Coordinate): Point {
+  function getClosestMapPoint(coordinate: Coordinate): Point | null {
     const numRows = mapPoints.length;
     const numCols = mapPoints[0]?.length ?? 0;
     if (numRows === 0 || numCols === 0) {
@@ -59,16 +59,14 @@ export function createTerrainHeightSamplerFromPointMatrix(
     );
 
     if (col < 0 || col > numCols - 1 || row < 0 || row > numRows - 1) {
-      throw new Error(
-        "Point is off map: requested coordinate is outside the map coordinate range",
-      );
+      return null;
     }
 
     return mapPoints[row][col];
   }
 
   return {
-    getClosestMapPoint(coordinate: Coordinate): Point {
+    getClosestMapPoint(coordinate: Coordinate): Point | null {
       return getClosestMapPoint(coordinate);
     },
     mapPoints: mapPoints,

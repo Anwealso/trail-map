@@ -33,6 +33,11 @@ export function Pin({
 
     // Create a Point with the sampled height (Point z is vertical height)
     const point = terrainSampler.getClosestMapPoint(coordinate);
+    if (!point) {
+      throw new Error(
+        "Invalid pin position: requested pin location is off the map.",
+      );
+    }
     setPosition(
       new THREE.Vector3(point.threeX, point.threeY + height / 2, point.threeZ),
     );

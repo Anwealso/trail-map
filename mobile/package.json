@@ -1,5 +1,5 @@
 {
-  "name": "3d-trail-map-mobile",
+  "name": "trail-map-mobile",
   "main": "expo/AppEntry.js",
   "version": "1.0.0",
   "scripts": {

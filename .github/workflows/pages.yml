@@ -1,0 +1,49 @@
+# Deploy web/ Vite app as a static site to GitHub Pages
+# Repo must have Settings → Pages → Build and deployment → Source: "GitHub Actions"
+
+name: Deploy to GitHub Pages
+
+on:
+  push:
+    branches: ["main"]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: "pages"
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    environment: github-pages
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: "npm"
+          cache-dependency-path: web/package-lock.json
+
+      - name: Set base path for GitHub Pages
+        run: echo "REPO_NAME=${GITHUB_REPOSITORY#*/}" >> $GITHUB_ENV
+
+      - name: Install and build
+        run: cd web && npm ci && npm run build
+        env:
+          VITE_BASE_PATH: "/${{ env.REPO_NAME }}/"
+
+      - name: Upload artifact
+        uses: actions/upload-pages-artifact@3
+        with:
+          path: web/dist
+
+      - name: Deploy to GitHub Pages
+        uses: actions/deploy-pages@4

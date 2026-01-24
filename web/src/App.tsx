@@ -16,14 +16,14 @@ import {
 } from "./utils/constants";
 
 export default function App() {
-  const [pinPosition, setPinPosition] = useState({ x: 4, y: 6 }); // world coordinates in km; map spans [0,10] x [0,10]
+  const [pinPosition] = useState({ x: 4, y: 6 }); // world coordinates in km; map spans [0,10] x [0,10]
   const [terrainSampler, setterrainSampler] = useState<TerrainSampler | null>(
     null,
   );
-  const [mapPoints, setMapPoints] = useState<Point[][] | null>(null);
 
   useEffect(() => {
-    getFinalMapMeshPointMatrix("/heightmap.jpg").then((points) => {
+    const base = import.meta.env.BASE_URL;
+    getFinalMapMeshPointMatrix(`${base}heightmap.jpg`).then((points) => {
       setterrainSampler(createTerrainHeightSamplerFromPointMatrix(points));
     });
   }, []);
@@ -49,7 +49,7 @@ export default function App() {
       {terrainSampler && <Terrain mapPoints={terrainSampler.mapPoints} />}
       {terrainSampler && (
         <Trail
-          csvUrl="/trail.csv"
+          csvUrl={`${import.meta.env.BASE_URL}trail.csv`}
           width={0.1}
           terrainSampler={terrainSampler}
           color={"#eaffdc"}
@@ -61,7 +61,7 @@ export default function App() {
           y={pinPosition.y}
           terrainSampler={terrainSampler}
           color="#ff4444"
-          radius={0.2}
+          radius={0.15}
         />
       )}
       <OrbitControls

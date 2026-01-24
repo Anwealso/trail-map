@@ -1,7 +1,7 @@
 {
   "expo": {
-    "name": "3d-trail-map-mobile",
-    "slug": "3d-trail-map-mobile",
+    "name": "trail-map-mobile",
+    "slug": "trail-map-mobile",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/icon.png",

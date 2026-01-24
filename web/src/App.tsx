@@ -14,6 +14,7 @@ import {
   TOPOMAP_GAME_SIZE_LIMIT_X,
   TOPOMAP_GAME_SIZE_LIMIT_Y,
 } from "./utils/constants";
+import "./App.css";
 
 export default function App() {
   const [pinPosition] = useState({ x: 4, y: 6 }); // world coordinates in km; map spans [0,10] x [0,10]
@@ -75,7 +76,13 @@ export default function App() {
           pointerEvents: loaded ? "none" : "auto",
           transition: "opacity 1s ease-out",
         }}
-      />
+      >
+        <div className="loading-container">
+          <div className="loading-dot" />
+          <div className="loading-dot" />
+          <div className="loading-dot" />
+        </div>
+      </div>
       <Canvas shadows camera={{ position: [8, 8, 8], fov: 50 }}>
       <Lighting />
 

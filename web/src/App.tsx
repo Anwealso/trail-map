@@ -70,7 +70,7 @@ export default function App() {
           csvUrl={`${import.meta.env.BASE_URL}trail.csv`}
           width={0.1}
           terrainSampler={terrainSampler}
-          color={"#fdf2b1"}
+          color={"#fff4bd"}
         />
       )}
       {terrainSampler && (
@@ -78,7 +78,7 @@ export default function App() {
           x={pinPosition.x}
           y={pinPosition.y}
           terrainSampler={terrainSampler}
-          color="#ff8b8b"
+          color="#ff4444"
           radius={0.15}
         />
       )}

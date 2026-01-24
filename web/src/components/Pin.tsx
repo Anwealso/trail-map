@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import * as THREE from "three";
 import { TerrainSampler } from "../utils/terrainSampler";
 import { Point } from "../utils/Point";
@@ -21,7 +21,9 @@ export function Pin({
   radius = 0.1, // radius in game units
 }: PinProps) {
   const [position, setPosition] = useState<THREE.Vector3 | null>(null);
-  const [height, setHeight] = useState<number>(radius * 2);
+  const height: number = useMemo(
+    () => radius * 2,
+    [radius]);
 
   useEffect(() => {
     // Create a coordinate from game coordinates and sample the height

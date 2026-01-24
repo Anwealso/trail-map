@@ -55,7 +55,7 @@ export default function App() {
           color={"#eaffdc"}
         />
       )}
-      {/* {terrainSampler && (
+      {terrainSampler && (
         <Pin
           x={pinPosition.x}
           y={pinPosition.y}
@@ -63,11 +63,11 @@ export default function App() {
           color="#ff4444"
           radius={0.2}
         />
-      )} */}
+      )}
       <OrbitControls
         target={orbitTarget}
         enablePan={false}
-        maxPolarAngle={Math.PI / 2}
+        maxPolarAngle={Math.PI / 2 - ((Math.PI / 180) * 20)}
       />
     </Canvas>
   );

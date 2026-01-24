@@ -88,7 +88,7 @@ export default function App() {
         penumbra={1}
       />
 
-      <axesHelper args={[2]} />
+      {/* <axesHelper args={[2]} /> */}
       {terrainSampler && <Terrain mapPoints={terrainSampler.mapPoints} />}
       {terrainSampler && (
         <Trail

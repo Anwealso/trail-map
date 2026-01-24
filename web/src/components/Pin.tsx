@@ -24,10 +24,6 @@ export function Pin({
   const [height, setHeight] = useState<number>(radius * 2);
 
   useEffect(() => {
-    // // Convert normalized coordinates (0-1, with 0.5 as center) to game coordinates
-    // const gameX = (x - 0.5) * TOPOMAP_GAME_SIZE_LIMIT_X
-    // const gameY = (y - 0.5) * TOPOMAP_GAME_SIZE_LIMIT_Y
-
     // Create a coordinate from game coordinates and sample the height
     const coordinate = Coordinate.fromWorldCoords(x, y);
 

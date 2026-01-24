@@ -16,7 +16,7 @@ import {
 } from "./utils/constants";
 
 export default function App() {
-  const [pinPosition, setPinPosition] = useState({ x: -2, y: 3 }); // world coordinates in kilometers
+  const [pinPosition, setPinPosition] = useState({ x: 4, y: 6 }); // world coordinates in km; map spans [0,10] x [0,10]
   const [terrainSampler, setterrainSampler] = useState<TerrainSampler | null>(
     null,
   );

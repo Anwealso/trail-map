@@ -26,3 +26,7 @@ export const GAME_TO_WORLD_HEIGHT_SCALE_RATIO = TOPOMAP_WORLD_SIZE_Z / TOPOMAP_G
 
 // Note: For now, the heightmap mesh will always be sized to fit within the gameworld dims of 1m x 1m
 export const GAMEWORLD_RESOLUTION = 25 // the number of points in our mesh per gameworld 1 "metre" unit
+
+export const GAUSSIAN_ENABLED = true
+export const GAUSSIAN_KERNEL_SIZE = 5
+export const GAUSSIAN_SIGMA = 1.5

@@ -215,7 +215,7 @@ export function Trail({
   if (!geometry) return null;
 
   return (
-    <mesh geometry={geometry}>
+    <mesh geometry={geometry} castShadow={false}>
       <meshStandardMaterial color={color} side={THREE.DoubleSide} />
     </mesh>
   );

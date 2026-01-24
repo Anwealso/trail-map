@@ -8,9 +8,12 @@ import {
 
 import { createClayMaterial } from "../utils/clayMaterial";
 
+const FADE_FRACTION: number = 0.2;
+
 interface TerrainProps {
   mapPoints: Point[][];
   material?: THREE.Material;
+  fadeFraction?: number;
 }
 
 /**
@@ -23,6 +26,7 @@ interface TerrainProps {
  */
 export function createHeightmapGeometry(
   mapPoints: Point[][],
+  fadeFraction: number = 0.2,
 ): THREE.BufferGeometry {
   // The mesh resolution matches the resampled matrix
   const segmentsX = mapPoints[0].length - 1;
@@ -46,7 +50,7 @@ export function createHeightmapGeometry(
   const inCircle: boolean[] = [];
   const vertexCount = (segmentsX + 1) * (segmentsZ + 1);
   const fadeArray = new Float32Array(vertexCount);
-  const fadeWidth = radius * 0.2; // wide fade over outer 50% of the circle
+  const fadeWidth = radius * fadeFraction; // wide fade over outer percentage of the circle
 
   for (let iy = 0; iy < segmentsZ + 1; iy++) {
     for (let ix = 0; ix < segmentsX + 1; ix++) {
@@ -124,7 +128,7 @@ export function Terrain({ mapPoints, material }: TerrainProps) {
   const mat = material ?? defaultMat;
 
   useEffect(() => {
-    setGeometry(createHeightmapGeometry(mapPoints));
+    setGeometry(createHeightmapGeometry(mapPoints, FADE_FRACTION));
   }, [mapPoints]);
 
   const undersideMat = useMemo(

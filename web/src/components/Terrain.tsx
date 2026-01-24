@@ -117,7 +117,7 @@ function addEdgeFadeShader(mat: THREE.Material) {
 export function Terrain({ mapPoints, material }: TerrainProps) {
   const [geometry, setGeometry] = useState<THREE.BufferGeometry | null>(null);
   const [defaultMat] = useState(() => {
-    const m = createClayMaterial({ color: 0xb0e67e });
+    const m = createClayMaterial({ color: "#d6eac2" });
     addEdgeFadeShader(m);
     return m;
   });

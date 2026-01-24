@@ -4,6 +4,7 @@ import { OrbitControls } from "@react-three/drei";
 import { Terrain } from "./components/Terrain";
 import { Trail } from "./components/Trail";
 import { Pin } from "./components/Pin";
+import { Lighting } from "./components/Lighting";
 import { getFinalMapMeshPointMatrix } from "./utils/heightmapToMesh";
 import {
   createTerrainHeightSamplerFromPointMatrix,
@@ -60,42 +61,25 @@ export default function App() {
 
   return (
     <Canvas shadows camera={{ position: [8, 8, 8], fov: 50 }}>
-      {/* Soft overall ambient fill */}
-      <ambientLight intensity={0.4} />
+      <Lighting />
 
-      {/* Warm Key Light (Sun) - casts the main shadows */}
-      <directionalLight
-        position={[10, 15, 5]}
-        intensity={1.2}
-        castShadow
-        shadow-mapSize-width={2048}
-        shadow-mapSize-height={2048}
-        shadow-camera-far={50}
-        shadow-camera-left={-10}
-        shadow-camera-right={10}
-        shadow-camera-top={10}
-        shadow-camera-bottom={-10}
-      />
-
-      {/* Cool Fill Light - softens the shadows from the side */}
-      <pointLight position={[-10, 5, -5]} intensity={0.5} color="#cbd5e1" />
-
-      {/* Rim Light - highlights the clay edges from behind */}
-      <spotLight
-        position={[0, 10, -10]}
-        intensity={0.8}
-        angle={0.3}
-        penumbra={1}
-      />
-
-      {/* <axesHelper args={[2]} /> */}
+      <axesHelper args={[2]} />
       {terrainSampler && <Terrain mapPoints={terrainSampler.mapPoints} />}
       {terrainSampler && (
         <Trail
           csvUrl={`${import.meta.env.BASE_URL}trail.csv`}
           width={0.1}
           terrainSampler={terrainSampler}
-          color={"#fff4bd"}
+          color={"#fdf2b1"}
+        />
+      )}
+      {terrainSampler && (
+        <Pin
+          x={pinPosition.x}
+          y={pinPosition.y}
+          terrainSampler={terrainSampler}
+          color="#ff8b8b"
+          radius={0.15}
         />
       )}
       {terrainSampler && (

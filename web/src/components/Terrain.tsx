@@ -141,7 +141,7 @@ export function Terrain({ mapPoints, material }: TerrainProps) {
 
   return (
     <group>
-      <mesh geometry={geometry} material={mat} />
+      <mesh geometry={geometry} material={mat} receiveShadow />
       <mesh geometry={geometry} material={undersideMat} />
     </group>
   );

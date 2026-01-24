@@ -71,6 +71,11 @@ export function Pin({
   if (!position) return null;
 
   return (
-    <mesh position={position} geometry={combinedGeometry} material={mat} />
+    <mesh
+      position={position}
+      geometry={combinedGeometry}
+      material={mat}
+      castShadow
+    />
   );
 }

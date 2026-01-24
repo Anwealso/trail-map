@@ -220,5 +220,12 @@ export function Trail({
 
   if (!geometry) return null;
 
-  return <mesh geometry={geometry} material={mat} castShadow={false} />;
+  return (
+    <mesh
+      geometry={geometry}
+      material={mat}
+      castShadow={false}
+      receiveShadow
+    />
+  );
 }

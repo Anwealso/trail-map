@@ -63,7 +63,7 @@ export default function App() {
     <Canvas shadows camera={{ position: [8, 8, 8], fov: 50 }}>
       <Lighting />
 
-      <axesHelper args={[2]} />
+      {/* <axesHelper args={[2]} /> */}
       {terrainSampler && <Terrain mapPoints={terrainSampler.mapPoints} />}
       {terrainSampler && (
         <Trail

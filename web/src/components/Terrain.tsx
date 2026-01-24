@@ -6,6 +6,8 @@ import {
   TOPOMAP_GAME_SIZE_LIMIT_Y,
 } from "../utils/constants";
 
+import { createClayMaterial } from "../utils/clayMaterial";
+
 interface TerrainProps {
   mapPoints: Point[][];
   material?: THREE.Material;
@@ -68,9 +70,7 @@ export function createHeightmapGeometry(
       // Fade: 1 at center, 0 at edge. Smoothstep over the outer fadeWidth.
       const distForFade = Math.sqrt((x - centerX) ** 2 + (z - centerZ) ** 2);
       const t =
-        fadeWidth > 1e-6
-          ? (distForFade - (radius - fadeWidth)) / fadeWidth
-          : 0;
+        fadeWidth > 1e-6 ? (distForFade - (radius - fadeWidth)) / fadeWidth : 0;
       const smoothstep = t <= 0 ? 0 : t >= 1 ? 1 : t * t * (3 - 2 * t);
       fadeArray[i] = 1 - smoothstep;
     }
@@ -98,14 +98,7 @@ export function createHeightmapGeometry(
   return geometry;
 }
 
-function createDefaultTerrainMaterial(): THREE.MeshStandardMaterial {
-  const mat = new THREE.MeshStandardMaterial({
-    color: 0xb0e67e,
-    wireframe: false,
-    flatShading: false,
-    side: THREE.FrontSide,
-    transparent: true,
-  });
+function addEdgeFadeShader(mat: THREE.Material) {
   mat.onBeforeCompile = (shader) => {
     shader.vertexShader =
       "attribute float fade;\nvarying float vFade;\n" + shader.vertexShader;
@@ -113,19 +106,21 @@ function createDefaultTerrainMaterial(): THREE.MeshStandardMaterial {
       "#include <begin_vertex>",
       "#include <begin_vertex>\nvFade = fade;",
     );
-    shader.fragmentShader =
-      "varying float vFade;\n" + shader.fragmentShader;
+    shader.fragmentShader = "varying float vFade;\n" + shader.fragmentShader;
     shader.fragmentShader = shader.fragmentShader.replace(
       "#include <opaque_fragment>",
       "diffuseColor.a *= vFade;\n#include <opaque_fragment>",
     );
   };
-  return mat;
 }
 
 export function Terrain({ mapPoints, material }: TerrainProps) {
   const [geometry, setGeometry] = useState<THREE.BufferGeometry | null>(null);
-  const [defaultMat] = useState(() => createDefaultTerrainMaterial());
+  const [defaultMat] = useState(() => {
+    const m = createClayMaterial({ color: 0xb0e67e });
+    addEdgeFadeShader(m);
+    return m;
+  });
   const mat = material ?? defaultMat;
 
   useEffect(() => {

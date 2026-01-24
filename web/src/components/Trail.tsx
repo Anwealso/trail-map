@@ -1,7 +1,8 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useMemo } from "react";
 import * as THREE from "three";
 import { TerrainSampler } from "../utils/terrainSampler";
 import { Point } from "../utils/Point";
+import { createClayMaterial } from "../utils/clayMaterial";
 
 const TRAIL_HEIGHT_OFFSET = 0.01; // helps stop the two meshes clipping each other
 const DIST_SAMPLES = 300; // samples along curve for distance-to-path
@@ -212,11 +213,12 @@ export function Trail({
     });
   }, [csvUrl, terrainSampler]);
 
+  const mat = useMemo(
+    () => createClayMaterial({ color, side: THREE.DoubleSide }),
+    [color],
+  );
+
   if (!geometry) return null;
 
-  return (
-    <mesh geometry={geometry} castShadow={false}>
-      <meshStandardMaterial color={color} side={THREE.DoubleSide} />
-    </mesh>
-  );
+  return <mesh geometry={geometry} material={mat} castShadow={false} />;
 }

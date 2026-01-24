@@ -3,6 +3,7 @@ import * as THREE from "three";
 import { TerrainSampler } from "../utils/terrainSampler";
 import { Point } from "../utils/Point";
 import { Coordinate } from "../utils/Coordinate";
+import { createClayMaterial } from "../utils/clayMaterial";
 
 interface PinProps {
   x: number; // X coordinate in world coordinates
@@ -41,26 +42,26 @@ export function Pin({
     );
   }, [x, y, terrainSampler, radius]);
 
-  if (!position) return null;
-
   // Calculate sphere radius that fits inside cone
   const coneAngle = Math.atan(radius / height);
   const sphereRadius = radius / Math.cos(coneAngle);
   const sphereOffset = height / 2 + sphereRadius * Math.sin(coneAngle);
 
+  const mat = useMemo(() => createClayMaterial({ color }), [color]);
+
+  if (!position) return null;
+
   return (
     <group position={position}>
       {/* Cone pin */}
-      <mesh rotation={[Math.PI, 0, 0]}>
+      <mesh rotation={[Math.PI, 0, 0]} material={mat}>
         <coneGeometry args={[radius, height, 16]} />
-        <meshStandardMaterial color={color} />
       </mesh>
       {/* Sphere that fits inside cone */}
-      <mesh position={[0, sphereOffset, 0]}>
+      <mesh position={[0, sphereOffset, 0]} material={mat}>
         <sphereGeometry
           args={[sphereRadius, 16, 16, 0, 2 * Math.PI, 0, Math.PI - coneAngle]}
         />
-        <meshStandardMaterial color={color} />
       </mesh>
     </group>
   );

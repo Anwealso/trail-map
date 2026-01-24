@@ -4,7 +4,7 @@ import { TerrainSampler } from "../utils/terrainSampler";
 import { Point } from "../utils/Point";
 import { createClayMaterial } from "../utils/clayMaterial";
 
-const TRAIL_HEIGHT_OFFSET = 0.01; // helps stop the two meshes clipping each other
+const TRAIL_HEIGHT_OFFSET = 0.001; // helps stop the two meshes clipping each other
 const DIST_SAMPLES = 300; // samples along curve for distance-to-path
 
 /**
@@ -221,11 +221,6 @@ export function Trail({
   if (!geometry) return null;
 
   return (
-    <mesh
-      geometry={geometry}
-      material={mat}
-      castShadow={false}
-      receiveShadow
-    />
+    <mesh geometry={geometry} material={mat} castShadow={false} receiveShadow />
   );
 }

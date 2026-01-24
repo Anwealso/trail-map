@@ -9,7 +9,6 @@ import {
   createTerrainHeightSamplerFromPointMatrix,
   TerrainSampler,
 } from "./utils/terrainSampler";
-import { Point } from "./utils/Point";
 import {
   TOPOMAP_GAME_SIZE_LIMIT_X,
   TOPOMAP_GAME_SIZE_LIMIT_Y,
@@ -93,7 +92,7 @@ export default function App() {
       <OrbitControls
         target={orbitTarget}
         enablePan={false}
-        maxPolarAngle={Math.PI / 2 - ((Math.PI / 180) * 20)}
+        maxPolarAngle={Math.PI / 2 - (Math.PI / 180) * 20}
       />
     </Canvas>
   );

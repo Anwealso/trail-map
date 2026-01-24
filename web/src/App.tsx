@@ -18,11 +18,6 @@ export default function App() {
   );
   const [mapPoints, setMapPoints] = useState<Point[][] | null>(null);
 
-  // useEffect(() => {
-  //   getFinalMapMeshPointMatrix("/heightmap.jpg").then((points) => {
-  //     setMapPoints(points);
-  //   });
-  // }, []);
   useEffect(() => {
     getFinalMapMeshPointMatrix("/heightmap.jpg").then((points) => {
       setterrainSampler(createTerrainHeightSamplerFromPointMatrix(points));
@@ -43,7 +38,7 @@ export default function App() {
           color={"#eaffdc"}
         />
       )}
-      {terrainSampler && (
+      {/* {terrainSampler && (
         <Pin
           x={pinPosition.x}
           y={pinPosition.y}
@@ -51,7 +46,7 @@ export default function App() {
           color="#ff4444"
           radius={0.2}
         />
-      )}
+      )} */}
       <OrbitControls
         target={[0, 0, 0]}
         enablePan={false}

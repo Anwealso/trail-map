@@ -56,8 +56,8 @@ export function Terrain({ mapPoints, material }: TerrainProps) {
     material ??
     new THREE.MeshStandardMaterial({
       color: 0xb0e67e,
-      // wireframe: false,
-      wireframe: true,
+      wireframe: false,
+      // wireframe: true,
       flatShading: false,
       side: THREE.DoubleSide,
     });

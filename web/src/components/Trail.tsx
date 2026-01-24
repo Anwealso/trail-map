@@ -3,7 +3,7 @@ import * as THREE from "three";
 import { TerrainSampler } from "../utils/terrainSampler";
 import { Point } from "../utils/Point";
 
-const TRAIL_HEIGHT_OFFSET = 0; //0.01;
+const TRAIL_HEIGHT_OFFSET = 0.01; // helps stop the two meshes clipping each other
 const DIST_SAMPLES = 300; // samples along curve for distance-to-path
 
 /**

@@ -41,9 +41,9 @@ jobs:
           VITE_BASE_PATH: "/${{ env.REPO_NAME }}/"
 
       - name: Upload artifact
-        uses: actions/upload-pages-artifact@3
+        uses: actions/upload-pages-artifact@v3
         with:
           path: web/dist
 
       - name: Deploy to GitHub Pages
-        uses: actions/deploy-pages@4
+        uses: actions/deploy-pages@v4

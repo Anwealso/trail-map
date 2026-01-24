@@ -77,7 +77,7 @@ export default function App() {
           csvUrl={`${import.meta.env.BASE_URL}trail.csv`}
           width={0.1}
           terrainSampler={terrainSampler}
-          color={"#eaffdc"}
+          color={"#fff4bd"}
         />
       )}
       {terrainSampler && (

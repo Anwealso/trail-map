@@ -35,13 +35,14 @@ export default function App() {
       <directionalLight position={[10, 10, 5]} intensity={1} />
       <axesHelper args={[2]} />
       {terrainSampler && <Terrain mapPoints={terrainSampler.mapPoints} />}
-      {/* {mapPoints && (
+      {terrainSampler && (
         <Trail
           csvUrl="/trail.csv"
+          width={0.1}
           terrainSampler={terrainSampler}
-          color={'#eaffdc'}s
+          color={"#eaffdc"}
         />
-      )} */}
+      )}
       {terrainSampler && (
         <Pin
           x={pinPosition.x}

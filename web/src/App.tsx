@@ -52,7 +52,11 @@ export default function App() {
           radius={0.2}
         />
       )}
-      <OrbitControls />
+      <OrbitControls
+        target={[0, 0, 0]}
+        enablePan={false}
+        maxPolarAngle={Math.PI / 2}
+      />
     </Canvas>
   );
 }

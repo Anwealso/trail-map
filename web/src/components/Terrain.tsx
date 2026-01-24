@@ -37,14 +37,47 @@ export function createHeightmapGeometry(
   const positions = geometry.attributes.position;
 
   // Map the resampled points directly to mesh vertices (threeX, threeY, threeZ = game coords in Three.js axes)
+  const radius =
+    Math.min(TOPOMAP_GAME_SIZE_LIMIT_X, TOPOMAP_GAME_SIZE_LIMIT_Y) / 2;
+  const centerX = TOPOMAP_GAME_SIZE_LIMIT_X / 2;
+  const centerZ = TOPOMAP_GAME_SIZE_LIMIT_Y / 2;
+  const inCircle: boolean[] = [];
+
   for (let iy = 0; iy < segmentsZ + 1; iy++) {
     for (let ix = 0; ix < segmentsX + 1; ix++) {
       const i = iy * (segmentsX + 1) + ix;
       const point = mapPoints[iy][ix];
-      positions.setX(i, point.threeX);
+      let x = point.threeX;
+      let z = point.threeZ;
+      const dx = x - centerX;
+      const dz = z - centerZ;
+      const dist = Math.sqrt(dx * dx + dz * dz);
+      inCircle[i] = dist <= radius;
+      if (dist > radius && dist > 1e-6) {
+        const scale = radius / dist;
+        x = centerX + dx * scale;
+        z = centerZ + dz * scale;
+      }
+      positions.setX(i, x);
       positions.setY(i, point.threeY);
-      positions.setZ(i, point.threeZ);
+      positions.setZ(i, z);
     }
+  }
+
+  // Remove triangles that are fully outside the circle
+  const index = geometry.getIndex();
+  if (index) {
+    const newIndices: number[] = [];
+    const arr = index.array;
+    for (let i = 0; i < arr.length; i += 3) {
+      const i0 = arr[i];
+      const i1 = arr[i + 1];
+      const i2 = arr[i + 2];
+      if (inCircle[i0] || inCircle[i1] || inCircle[i2]) {
+        newIndices.push(i0, i1, i2);
+      }
+    }
+    geometry.setIndex(newIndices);
   }
 
   geometry.computeVertexNormals();

@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { Canvas } from "@react-three/fiber";
 import { OrbitControls } from "@react-three/drei";
 import { Terrain } from "./components/Terrain";
@@ -10,6 +10,10 @@ import {
   TerrainSampler,
 } from "./utils/terrainSampler";
 import { Point } from "./utils/Point";
+import {
+  TOPOMAP_GAME_SIZE_LIMIT_X,
+  TOPOMAP_GAME_SIZE_LIMIT_Y,
+} from "./utils/constants";
 
 export default function App() {
   const [pinPosition, setPinPosition] = useState({ x: -2, y: 3 }); // world coordinates in kilometers
@@ -23,6 +27,19 @@ export default function App() {
       setterrainSampler(createTerrainHeightSamplerFromPointMatrix(points));
     });
   }, []);
+
+  const orbitTarget = useMemo(() => {
+    const cx = TOPOMAP_GAME_SIZE_LIMIT_X / 2;
+    const cz = TOPOMAP_GAME_SIZE_LIMIT_Y / 2;
+    if (!terrainSampler?.mapPoints?.length) return [cx, 0, cz] as const;
+    let minY = Infinity;
+    for (const row of terrainSampler.mapPoints) {
+      for (const p of row) {
+        if (p.threeY < minY) minY = p.threeY;
+      }
+    }
+    return [cx, minY === Infinity ? 0 : minY, cz] as const;
+  }, [terrainSampler]);
 
   return (
     <Canvas camera={{ position: [8, 8, 8], fov: 50 }}>
@@ -48,7 +65,7 @@ export default function App() {
         />
       )} */}
       <OrbitControls
-        target={[0, 0, 0]}
+        target={orbitTarget}
         enablePan={false}
         maxPolarAngle={Math.PI / 2}
       />

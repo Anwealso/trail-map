@@ -145,7 +145,7 @@ export async function loadHeightmapImage(url: string): Promise<ImageData> {
 /**
  * Creates a 2D matrix of Point objects from heightmap image data.
  * Converts pixel coordinates to world coordinates using TOPOMAP_WORLD_SIZE constants.
- * Coordinates are centered at (0, 0) in world space.
+ * X and Y span [0, TOPOMAP_WORLD_SIZE_X] and [0, TOPOMAP_WORLD_SIZE_Y] (original/uncentered).
  * @param imageData - The heightmap image data
  * @returns A 2D array of Point objects where [row][col] corresponds to [y][x] in the image
  * TODO: In the future this probably doesnt need to be proper Points, it can just be a dumb matrix
@@ -162,12 +162,12 @@ export function createPointMatrixFromHeightmap(
     const row: Point[] = []
     for (let ix = 0; ix < imgWidth; ix++) {
       const idx = (iy * imgWidth + ix) * 4
-      const normalizedHeight = imageData.data[idx] / 255 
+      const normalizedHeight = imageData.data[idx] / 255 // 255 because the grayscale pixel range is 0-255
 
-      // Center the world coordinates at (0, 0)
-      const worldX = (ix / (imgWidth - 1) - 0.5) * TOPOMAP_WORLD_SIZE_X
-      const worldY = (iy / (imgHeight - 1) - 0.5) * TOPOMAP_WORLD_SIZE_Y
-      const worldZ = normalizedHeight * TOPOMAP_WORLD_SIZE_Z
+      // Original coords: map [0,1] to [0, TOPOMAP_WORLD_SIZE_X/Y]
+      const worldX = (ix / (imgWidth - 1)) * TOPOMAP_WORLD_SIZE_X;
+      const worldY = (iy / (imgHeight - 1)) * TOPOMAP_WORLD_SIZE_Y;
+      const worldZ = normalizedHeight * TOPOMAP_WORLD_SIZE_Z;
 
       row.push(Point.fromWorldCoords(worldX, worldY, worldZ))
     }
@@ -199,11 +199,11 @@ export function resamplePointMatrix(
       const u = ix / (targetWidth - 1)
       const v = iy / (targetHeight - 1)
 
-      const worldX = (u - 0.5) * TOPOMAP_WORLD_SIZE_X
-      const worldY = (v - 0.5) * TOPOMAP_WORLD_SIZE_Y
-      
-      const worldZ = sampleHeightBilinear(data, imgWidth, imgHeight, u, v)
-      row.push(Point.fromWorldCoords(worldX, worldY, worldZ))
+      const worldX = u * TOPOMAP_WORLD_SIZE_X;
+      const worldY = v * TOPOMAP_WORLD_SIZE_Y;
+
+      const worldZ = sampleHeightBilinear(data, imgWidth, imgHeight, u, v);
+      row.push(Point.fromWorldCoords(worldX, worldY, worldZ));
     }
     matrix.push(row)
   }
@@ -214,7 +214,7 @@ export function resamplePointMatrix(
  * Creates a Three.js PlaneGeometry from heightmap image data using TerrainHeightSampler.
  * The geometry is sized to match the game world dimensions (1x1 game units) and uses
  * GAMEWORLD_RESOLUTION to determine the mesh density.
- * 
+ *
  * @param sampler - The terrain height sampler containing the point matrix
  * @returns A Three.js PlaneGeometry with heights sampled from the terrain heightmap
  */

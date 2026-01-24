@@ -4,7 +4,6 @@ import { Point } from "../utils/Point";
 import {
   TOPOMAP_GAME_SIZE_LIMIT_X,
   TOPOMAP_GAME_SIZE_LIMIT_Y,
-  WORLD_TO_GAME_HEIGHT_SCALE_RATIO,
 } from "../utils/constants";
 
 interface TerrainProps {
@@ -37,12 +36,14 @@ export function createHeightmapGeometry(
   geometry.rotateX(-Math.PI / 2);
   const positions = geometry.attributes.position;
 
-  // Map the resampled points directly to mesh vertices
+  // Map the resampled points directly to mesh vertices (threeX, threeY, threeZ = game coords in Three.js axes)
   for (let iy = 0; iy < segmentsZ + 1; iy++) {
     for (let ix = 0; ix < segmentsX + 1; ix++) {
       const i = iy * (segmentsX + 1) + ix;
       const point = mapPoints[iy][ix];
-      positions.setY(i, point.worldZ * WORLD_TO_GAME_HEIGHT_SCALE_RATIO);
+      positions.setX(i, point.threeX);
+      positions.setY(i, point.threeY);
+      positions.setZ(i, point.threeZ);
     }
   }
 

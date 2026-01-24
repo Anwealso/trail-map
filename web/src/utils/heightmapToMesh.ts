@@ -355,8 +355,18 @@ export async function getFinalMapMeshPointMatrix(
   // Up the resolution using bilinear interpolation to reach the final mesh resolution
   const targetWidth = Math.ceil(GAMEWORLD_RESOLUTION * TOPOMAP_GAME_SIZE_LIMIT_X)
   const targetHeight = Math.ceil(GAMEWORLD_RESOLUTION * TOPOMAP_GAME_SIZE_LIMIT_Y)
-  const pointMatrix = resamplePointMatrix(pointMatrixRaw, targetWidth, targetHeight)
+  let pointMatrix = resamplePointMatrix(pointMatrixRaw, targetWidth, targetHeight)
   
+  if (GAUSSIAN_ENABLED) {
+    pointMatrix = applyGaussianBlur(
+      pointMatrix, 
+      targetWidth, 
+      targetHeight, 
+      GAUSSIAN_KERNEL_SIZE, 
+      GAUSSIAN_SIGMA
+    )
+  }
+
   return pointMatrix
 }
 

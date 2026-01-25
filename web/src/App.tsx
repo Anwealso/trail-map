@@ -90,7 +90,7 @@ export default function App() {
         {terrainSampler && <Terrain mapPoints={terrainSampler.mapPoints} />}
         {terrainSampler && (
           <Trail
-            csvUrl={`${import.meta.env.BASE_URL}trail.csv`}
+            csvUrl={`${import.meta.env.BASE_URL}trail_2.csv`}
             width={0.05}
             terrainSampler={terrainSampler}
             color={"#ffeb3b"}

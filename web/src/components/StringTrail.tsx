@@ -36,6 +36,7 @@ export function StringTrail({
   onLoad,
 }: StringTrailProps) {
   const [geometry, setGeometry] = useState<THREE.BufferGeometry | null>(null);
+  const [endpoints, setEndpoints] = useState<[THREE.Vector3, THREE.Vector3] | null>(null);
 
   useEffect(() => {
     loadTrailCSV(csvUrl).then((data) => {
@@ -61,6 +62,7 @@ export function StringTrail({
       // Tubular segments, Radius, Radial segments, Closed
       const tubeGeometry = new THREE.TubeGeometry(curve, trailCoordsVect3.length * 5, radius, 8, false);
       
+      setEndpoints([trailCoordsVect3[0], trailCoordsVect3[trailCoordsVect3.length - 1]]);
       setGeometry(tubeGeometry);
       onLoad?.();
     });
@@ -71,9 +73,19 @@ export function StringTrail({
     [color],
   );
 
+  const capGeometry = useMemo(() => new THREE.SphereGeometry(radius, 8, 8), [radius]);
+
   if (!geometry) return null;
 
   return (
-    <mesh geometry={geometry} material={mat} castShadow={false} receiveShadow />
+    <group>
+      <mesh geometry={geometry} material={mat} castShadow={false} receiveShadow />
+      {endpoints && (
+        <>
+          <mesh position={endpoints[0]} geometry={capGeometry} material={mat} />
+          <mesh position={endpoints[1]} geometry={capGeometry} material={mat} />
+        </>
+      )}
+    </group>
   );
 }

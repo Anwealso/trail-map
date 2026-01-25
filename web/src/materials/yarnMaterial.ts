@@ -32,7 +32,7 @@ function createYarnTexture(): {
     ctx.fillRect(0, 0, width, height);
 
     // Draw twisted strands (diagonal lines)
-    const numStrands = 10; // Adjusted ridges (was 12)
+    const numStrands = 8; // Adjusted ridges
     const strandWidth = width / numStrands;
     const angle = Math.PI / 4; // 45 degrees
 
@@ -116,22 +116,22 @@ function createYarnTexture(): {
   ctx.fillRect(0, 0, width, height);
   
   // Draw strands for height
-  const numStrands = 10; // Adjusted ridges
-  const strandWidth = width / numStrands;
+  const numStrandsHeight = 8; // Adjusted ridges
+  const strandWidthHeight = width / numStrandsHeight;
   const angle = Math.PI / 4;
   
-  for (let i = -numStrands; i < numStrands * 2; i++) {
+  for (let i = -numStrandsHeight; i < numStrandsHeight * 2; i++) {
      ctx.save();
-     const x = i * strandWidth;
+     const x = i * strandWidthHeight;
      ctx.translate(x, 0);
      ctx.rotate(angle);
      
-     const gradient = ctx.createLinearGradient(-strandWidth/2, 0, strandWidth/2, 0);
+     const gradient = ctx.createLinearGradient(-strandWidthHeight/2, 0, strandWidthHeight/2, 0);
      gradient.addColorStop(0, "#000000"); // Deep
      gradient.addColorStop(0.5, "#ffffff"); // High
      gradient.addColorStop(1, "#000000"); // Deep
      ctx.fillStyle = gradient;
-     ctx.fillRect(-strandWidth/2, -height * 2, strandWidth, height * 4);
+     ctx.fillRect(-strandWidthHeight/2, -height * 2, strandWidthHeight, height * 4);
      ctx.restore();
   }
   
@@ -179,8 +179,9 @@ export function createYarnMaterial({
     color, // Texture provides color
     map: textures.map,
     bumpMap: textures.normalMap, // Using the height texture
-    bumpScale: 0.1,
-    roughness: 0.9,
+    bumpScale: 0.15,
+    roughness: 1.0,
+    metalness: 0.0,
     roughnessMap: textures.roughnessMap,
     side: THREE.DoubleSide,
   });

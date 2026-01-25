@@ -8,81 +8,131 @@ interface ClayMaterialParams {
   side?: THREE.Side;
 }
 
-function createClayBumpMap(): THREE.Texture {
+function createClayTexture(): {
+  map: THREE.Texture;
+  bumpMap: THREE.Texture;
+  roughnessMap: THREE.Texture;
+} {
   const width = 1024;
   const height = 1024;
-  const size = width * height;
-  const data = new Uint8Array(4 * size);
+  const canvas = document.createElement("canvas");
+  canvas.width = width;
+  canvas.height = height;
+  const ctx = canvas.getContext("2d");
+  if (!ctx) throw new Error("Could not get canvas context");
 
-  // Fractal noise implementation using octaves of sine waves
+  // Helper for random in range
+  const lerp = (min: number, max: number, t: number) => min + (max - min) * t;
+
+  const drawSpeckleLayer = (
+    count: number,
+    sizeRange: [number, number],
+    alphaRange: [number, number],
+    color: string,
+  ) => {
+    for (let i = 0; i < count; i++) {
+      const x = Math.random() * width;
+      const y = Math.random() * height;
+      const alpha = lerp(alphaRange[0], alphaRange[1], Math.random());
+      const size = lerp(sizeRange[0], sizeRange[1], Math.random());
+      const sides = Math.floor(lerp(3, 7, Math.random()));
+      const startAngle = Math.random() * Math.PI * 2;
+
+      ctx.globalAlpha = alpha;
+      ctx.fillStyle = color;
+      ctx.beginPath();
+      for (let j = 0; j < sides; j++) {
+        const angle = startAngle + (Math.PI * 2 * j) / sides;
+        const dist = size * (0.8 + Math.random() * 0.4);
+        const px = x + Math.cos(angle) * dist;
+        const py = y + Math.sin(angle) * dist;
+        if (j === 0) ctx.moveTo(px, py);
+        else ctx.lineTo(px, py);
+      }
+      ctx.closePath();
+      ctx.fill();
+    }
+  };
+
+  // Base Layer
+  ctx.fillStyle = "#ffffff";
+  ctx.fillRect(0, 0, width, height);
+
+  // Large "grog" chunks - subtle color variations
+  drawSpeckleLayer(1000, [5, 15], [0.05, 0.15], "#000000");
+  drawSpeckleLayer(1000, [5, 15], [0.05, 0.15], "#ffffff");
+
+  // Small dark mineral specks
+  drawSpeckleLayer(3000, [1, 3], [0.1, 0.4], "#221100");
+
+  const mapTexture = new THREE.CanvasTexture(canvas);
+  mapTexture.wrapS = mapTexture.wrapT = THREE.RepeatWrapping;
+
+  // Bump & Roughness Data
+  const size = width * height;
+  const bumpData = new Uint8Array(size);
+  const roughnessData = new Uint8Array(size);
+
   const getNoise = (nx: number, ny: number) => {
     let v = 0.0;
-
-    // Layer 1: Large "hand-moulded" unevenness
+    // Macro texture (uneven surface)
     v += Math.sin(nx * 4.0 + Math.cos(ny * 3.0)) * 0.5;
     v += Math.cos(ny * 4.5 + Math.sin(nx * 3.5)) * 0.5;
-
-    // Layer 2: Medium "dents and presses"
-    v += Math.sin(nx * 15.0 + ny * 10.0) * 0.2;
-    v += Math.cos(nx * 12.0 - ny * 18.0) * 0.2;
-
-    // Layer 3: High-frequency "fingerprints"
-    // Swirling patterns created by nested sines
-    const swirl = Math.sin(nx * 100.0 + Math.sin(ny * 100.0) * 5.0);
-    v += swirl * 0.15;
-
-    // Layer 4: Fine clay grain
-    v += (Math.random() - 0.5) * 0.1;
-
-    return (v + 1.5) / 3.0; // Normalize roughly to 0-1
+    // Medium imperfections
+    v += Math.sin(nx * 20.0 + ny * 15.0) * 0.2;
+    // High frequency grit
+    v += (Math.random() - 0.5) * 0.3;
+    return (v + 1.5) / 3.0;
   };
 
   for (let i = 0; i < size; i++) {
-    const x = i % width;
-    const y = Math.floor(i / width);
-
-    const nx = x / width;
-    const ny = y / height;
-
-    const noise = getNoise(nx, ny);
-    const bumpVal = Math.floor(Math.max(0, Math.min(1, noise)) * 255);
-
-    // Bias roughness map to be higher to ensure it stays matte and "dry"
-    const bias = 0.3;
-    const roughnessVal = Math.floor((bias + noise * (1 - bias)) * 255);
-
-    data[i * 4] = bumpVal; // R (Bump)
-    data[i * 4 + 1] = roughnessVal; // G (Roughness Map - must be high for matte)
-    data[i * 4 + 2] = bumpVal; // B
-    data[i * 4 + 3] = 255; // A
+    const nx = (i % width) / width;
+    const ny = Math.floor(i / width) / height;
+    const n = getNoise(nx, ny);
+    bumpData[i] = Math.floor(Math.max(0, Math.min(1, n)) * 255);
+    // Pockmarks/Grit are rougher
+    roughnessData[i] = Math.floor(lerp(0.7, 1.0, n));
   }
 
-  const texture = new THREE.DataTexture(data, width, height);
-  texture.wrapS = THREE.RepeatWrapping;
-  texture.wrapT = THREE.RepeatWrapping;
-  texture.repeat.set(2, 2);
-  texture.needsUpdate = true;
-  return texture;
+  const bumpMap = new THREE.DataTexture(bumpData, width, height, THREE.RedFormat);
+  bumpMap.wrapS = bumpMap.wrapT = THREE.RepeatWrapping;
+  bumpMap.needsUpdate = true;
+
+  const roughnessMap = new THREE.DataTexture(
+    roughnessData,
+    width,
+    height,
+    THREE.RedFormat,
+  );
+  roughnessMap.wrapS = roughnessMap.wrapT = THREE.RepeatWrapping;
+  roughnessMap.needsUpdate = true;
+
+  return { map: mapTexture, bumpMap, roughnessMap };
 }
 
 export function createClayMaterial({
-  color = 0xc28564, // Terracotta/Clay color
-  roughness = 0.9, // Very matte base
+  color = 0xc28564,
+  roughness = 0.95,
   metalness = 0.0,
-  bumpScale = 0.08, // Increased for more visible texture
+  bumpScale = 0.15,
   side = THREE.FrontSide,
-}: ClayMaterialParams = {}): THREE.MeshStandardMaterial {
-  const clayTexture = createClayBumpMap();
+}: ClayMaterialParams = {}): THREE.MeshPhysicalMaterial {
+  const textures = createClayTexture();
 
-  const mat = new THREE.MeshStandardMaterial({
+  const mat = new THREE.MeshPhysicalMaterial({
     color,
     roughness,
     metalness,
-    bumpMap: clayTexture,
+    map: textures.map,
+    bumpMap: textures.bumpMap,
     bumpScale,
-    roughnessMap: clayTexture,
+    roughnessMap: textures.roughnessMap,
     side,
     transparent: true,
+    // Add a subtle clearcoat for that "slightly damp" or "finished" look if desired,
+    // though the guide emphasizes rough raw clay. Let's keep it mostly matte.
+    clearcoat: 0.02,
+    clearcoatRoughness: 0.8,
   });
 
   return mat;

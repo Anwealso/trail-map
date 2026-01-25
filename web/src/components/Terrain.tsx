@@ -6,7 +6,7 @@ import {
   TOPOMAP_GAME_SIZE_LIMIT_Y,
 } from "../utils/constants";
 
-import { createClayMaterial } from "../utils/clayMaterial";
+import { createClayMaterial } from "../materials/clayMaterial";
 
 const FADE_FRACTION: number = 0.2;
 

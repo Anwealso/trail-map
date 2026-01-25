@@ -2,7 +2,7 @@ import { useState, useEffect, useMemo, useRef } from "react";
 import { Canvas } from "@react-three/fiber";
 import { OrbitControls } from "@react-three/drei";
 import { Terrain } from "./components/Terrain";
-import { Trail } from "./components/Trail";
+import { StringTrail } from "./components/StringTrail";
 import { Pin } from "./components/Pin";
 import { Lighting } from "./components/Lighting";
 import { getFinalMapMeshPointMatrix } from "./utils/heightmapToMesh";
@@ -89,11 +89,11 @@ export default function App() {
         {/* <axesHelper args={[2]} /> */}
         {terrainSampler && <Terrain mapPoints={terrainSampler.mapPoints} />}
         {terrainSampler && (
-          <Trail
+          <StringTrail
             csvUrl={`${import.meta.env.BASE_URL}trail_2.csv`}
-            width={0.05}
+            radius={0.03}
+            color="#ffeb3b"
             terrainSampler={terrainSampler}
-            color={"#ffeb3b"}
             onLoad={() => setLoaded(true)}
           />
         )}

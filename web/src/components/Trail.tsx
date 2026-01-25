@@ -2,7 +2,7 @@ import { useEffect, useState, useMemo } from "react";
 import * as THREE from "three";
 import { TerrainSampler } from "../utils/terrainSampler";
 import { Point } from "../utils/Point";
-import { createClayMaterial } from "../utils/clayMaterial";
+import { createClayMaterial } from "../materials/clayMaterial";
 
 const TRAIL_HEIGHT_OFFSET = 0.003; // helps stop the two meshes clipping each other
 const DIST_SAMPLES = 300; // samples along curve for distance-to-path

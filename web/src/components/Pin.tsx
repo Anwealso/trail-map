@@ -4,7 +4,7 @@ import * as BufferGeometryUtils from "three/examples/jsm/utils/BufferGeometryUti
 import { TerrainSampler } from "../utils/terrainSampler";
 import { Point } from "../utils/Point";
 import { Coordinate } from "../utils/Coordinate";
-import { createClayMaterial } from "../utils/clayMaterial";
+import { createClayMaterial } from "../materials/clayMaterial";
 
 interface PinProps {
   x: number; // X coordinate in world coordinates

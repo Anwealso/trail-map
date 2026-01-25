@@ -5,6 +5,7 @@ import {
   TOPOMAP_GAME_SIZE_LIMIT_X,
   TOPOMAP_GAME_SIZE_LIMIT_Y,
 } from "../utils/constants";
+import { simplex2d } from "../utils/noise";
 
 import { createClayMaterial } from "../materials/clayMaterial";
 
@@ -67,9 +68,14 @@ export function createHeightmapGeometry(
         x = centerX + dx * scale;
         z = centerZ + dz * scale;
       }
-      positions.setX(i, x);
-      positions.setY(i, point.threeY);
-      positions.setZ(i, z);
+        positions.setX(i, x);
+        
+        // Add "Hand-Sculpted" wobble (low frequency noise)
+        const wobble = simplex2d(x * 1.5, z * 1.5) * 0.05;
+        const finalY = point.threeY + wobble;
+        
+        positions.setY(i, finalY);
+        positions.setZ(i, z);
 
       // Fade: 1 at center, 0 at edge. Smoothstep over the outer fadeWidth.
       const distForFade = Math.sqrt((x - centerX) ** 2 + (z - centerZ) ** 2);

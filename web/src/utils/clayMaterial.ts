@@ -112,8 +112,8 @@ function createClayTexture(): {
 
 export function createClayMaterial({
   color = 0xc28564,
-  roughness = 0.95,
-  metalness = 0.0,
+  roughness = 0.9,
+  metalness = 0.1,
   bumpScale = 0.15,
   side = THREE.FrontSide,
 }: ClayMaterialParams = {}): THREE.MeshPhysicalMaterial {
@@ -129,10 +129,6 @@ export function createClayMaterial({
     roughnessMap: textures.roughnessMap,
     side,
     transparent: true,
-    // Add a subtle clearcoat for that "slightly damp" or "finished" look if desired,
-    // though the guide emphasizes rough raw clay. Let's keep it mostly matte.
-    clearcoat: 0.02,
-    clearcoatRoughness: 0.8,
   });
 
   return mat;

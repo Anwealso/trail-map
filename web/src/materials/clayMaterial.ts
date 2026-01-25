@@ -62,10 +62,30 @@ function createClayTexture(): {
   ctx.fillStyle = "#ffffff";
   ctx.fillRect(0, 0, width, height);
 
-  // Speckle Layers - shrunk size further and increased count significantly
+  // Speckle Layers
   drawSpeckleLayer(30000, [0.05, 0.4], [0.1, 0.6], [3, 6], 0.5, "#000000");
   drawSpeckleLayer(30000, [0.05, 0.4], [0.1, 0.6], [3, 6], 0.5, "#ffffff");
   drawSpeckleLayer(15000, [0.05, 0.3], [0.1, 0.5], [3, 6], 0.5, "#221100");
+
+  // Add Fingerprints to Roughness
+  const drawFingerprint = (x: number, y: number, radius: number) => {
+    ctx.save();
+    ctx.translate(x, y);
+    ctx.rotate(Math.random() * Math.PI * 2);
+    ctx.strokeStyle = "#ffffff";
+    ctx.lineWidth = 1;
+    ctx.globalAlpha = 0.05;
+    for (let i = 0; i < 5; i++) {
+      ctx.beginPath();
+      ctx.arc(0, 0, radius + i * 3, 0, Math.PI * 1.2);
+      ctx.stroke();
+    }
+    ctx.restore();
+  };
+
+  for (let i = 0; i < 20; i++) {
+    drawFingerprint(Math.random() * width, Math.random() * height, 10 + Math.random() * 20);
+  }
 
   const mapTexture = new THREE.CanvasTexture(canvas);
   mapTexture.wrapS = mapTexture.wrapT = THREE.RepeatWrapping;

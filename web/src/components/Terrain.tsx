@@ -82,6 +82,19 @@ export function createHeightmapGeometry(
 
   geometry.setAttribute("fade", new THREE.BufferAttribute(fadeArray, 1));
 
+  // Find height range for texturing
+  let minH = Infinity;
+  let maxH = -Infinity;
+  for (let i = 0; i < positions.count; i++) {
+    const y = positions.getY(i);
+    if (y < minH) minH = y;
+    if (y > maxH) maxH = y;
+  }
+  const heightRange = new Float32Array(2);
+  heightRange[0] = minH;
+  heightRange[1] = maxH;
+  geometry.userData.heightRange = { min: minH, max: maxH };
+
   // Remove triangles that are fully outside the circle
   const index = geometry.getIndex();
   if (index) {
@@ -102,15 +115,42 @@ export function createHeightmapGeometry(
   return geometry;
 }
 
-function addEdgeFadeShader(mat: THREE.Material) {
+function addTerrainShader(mat: THREE.Material) {
+  mat.userData.uHeightRange = { value: new THREE.Vector2(0, 1) };
   mat.onBeforeCompile = (shader) => {
-    shader.vertexShader =
-      "attribute float fade;\nvarying float vFade;\n" + shader.vertexShader;
+    shader.uniforms.uHeightRange = mat.userData.uHeightRange;
+    shader.vertexShader = shader.vertexShader.replace(
+      "#include <common>",
+      "#include <common>\nattribute float fade;\nvarying float vFade;\nvarying float vTerrainHeight;",
+    );
     shader.vertexShader = shader.vertexShader.replace(
       "#include <begin_vertex>",
-      "#include <begin_vertex>\nvFade = fade;",
+      "#include <begin_vertex>\nvFade = fade;\nvTerrainHeight = position.y;",
     );
-    shader.fragmentShader = "varying float vFade;\n" + shader.fragmentShader;
+    shader.fragmentShader = shader.fragmentShader.replace(
+      "#include <common>",
+      "#include <common>\nvarying float vFade;\nvarying float vTerrainHeight;\nuniform vec2 uHeightRange;",
+    );
+
+    const colorLogic = `
+      float h = (vTerrainHeight - uHeightRange.x) / max(0.0001, uHeightRange.y - uHeightRange.x);
+      h = clamp(h, 0.0, 1.0);
+      
+      vec3 snowColor = vec3(1.0, 1.0, 1.0);
+      vec3 riverColor = vec3(0.0, 0.1, 0.9);
+      
+      float snowMask = smoothstep(0.7, 0.8, h);
+      float riverMask = 1.0 - smoothstep(0.098, 0.102, h); // Dramatically reduced edge blur
+      
+      diffuseColor.rgb = mix(diffuseColor.rgb, snowColor, snowMask);
+      diffuseColor.rgb = mix(diffuseColor.rgb, riverColor, riverMask);
+    `;
+
+    shader.fragmentShader = shader.fragmentShader.replace(
+      "#include <color_fragment>",
+      "#include <color_fragment>\n" + colorLogic,
+    );
+
     shader.fragmentShader = shader.fragmentShader.replace(
       "#include <opaque_fragment>",
       "diffuseColor.a *= vFade;\n#include <opaque_fragment>",
@@ -122,14 +162,22 @@ export function Terrain({ mapPoints, material }: TerrainProps) {
   const [geometry, setGeometry] = useState<THREE.BufferGeometry | null>(null);
   const [defaultMat] = useState(() => {
     const m = createClayMaterial({ color: "#b0e67e" });
-    addEdgeFadeShader(m);
+    addTerrainShader(m);
     return m;
   });
   const mat = material ?? defaultMat;
 
   useEffect(() => {
-    setGeometry(createHeightmapGeometry(mapPoints, FADE_FRACTION));
-  }, [mapPoints]);
+    const geom = createHeightmapGeometry(mapPoints, FADE_FRACTION);
+    setGeometry(geom);
+    if (mat.userData.uHeightRange) {
+      mat.userData.uHeightRange.value.set(
+        geom.userData.heightRange.min,
+        geom.userData.heightRange.max,
+      );
+      mat.needsUpdate = true;
+    }
+  }, [mapPoints, mat]);
 
   const undersideMat = useMemo(
     () =>

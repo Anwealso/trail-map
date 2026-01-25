@@ -28,22 +28,26 @@ function createClayTexture(): {
     count: number,
     sizeRange: [number, number],
     alphaRange: [number, number],
+    sidesRange: [number, number],
+    uniformity: number,
     color: string,
   ) => {
     for (let i = 0; i < count; i++) {
       const x = Math.random() * width;
       const y = Math.random() * height;
       const alpha = lerp(alphaRange[0], alphaRange[1], Math.random());
+      const sides = Math.floor(
+        lerp(sidesRange[0], sidesRange[1] + 1, Math.random()),
+      );
       const size = lerp(sizeRange[0], sizeRange[1], Math.random());
-      const sides = Math.floor(lerp(3, 7, Math.random()));
       const startAngle = Math.random() * Math.PI * 2;
 
       ctx.globalAlpha = alpha;
       ctx.fillStyle = color;
       ctx.beginPath();
       for (let j = 0; j < sides; j++) {
+        const dist = lerp(size * uniformity, size, Math.random());
         const angle = startAngle + (Math.PI * 2 * j) / sides;
-        const dist = size * (0.8 + Math.random() * 0.4);
         const px = x + Math.cos(angle) * dist;
         const py = y + Math.sin(angle) * dist;
         if (j === 0) ctx.moveTo(px, py);
@@ -58,12 +62,10 @@ function createClayTexture(): {
   ctx.fillStyle = "#ffffff";
   ctx.fillRect(0, 0, width, height);
 
-  // Large "grog" chunks - subtle color variations
-  drawSpeckleLayer(1000, [5, 15], [0.05, 0.15], "#000000");
-  drawSpeckleLayer(1000, [5, 15], [0.05, 0.15], "#ffffff");
-
-  // Small dark mineral specks
-  drawSpeckleLayer(3000, [1, 3], [0.1, 0.4], "#221100");
+  // Speckle Layers - shrunk size further and increased count significantly
+  drawSpeckleLayer(10000, [0.1, 0.5], [0.1, 0.5], [3, 6], 0.5, "#000000");
+  drawSpeckleLayer(10000, [0.1, 0.5], [0.1, 0.5], [3, 6], 0.5, "#ffffff");
+  drawSpeckleLayer(5000, [0.05, 0.3], [0.1, 0.4], [3, 6], 0.5, "#221100");
 
   const mapTexture = new THREE.CanvasTexture(canvas);
   mapTexture.wrapS = mapTexture.wrapT = THREE.RepeatWrapping;
@@ -94,7 +96,12 @@ function createClayTexture(): {
     roughnessData[i] = Math.floor(lerp(0.7, 1.0, n));
   }
 
-  const bumpMap = new THREE.DataTexture(bumpData, width, height, THREE.RedFormat);
+  const bumpMap = new THREE.DataTexture(
+    bumpData,
+    width,
+    height,
+    THREE.RedFormat,
+  );
   bumpMap.wrapS = bumpMap.wrapT = THREE.RepeatWrapping;
   bumpMap.needsUpdate = true;
 

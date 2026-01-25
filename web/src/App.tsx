@@ -83,47 +83,47 @@ export default function App() {
           <div className="loading-dot" />
         </div>
       </div>
-      <Canvas shadows camera={{ position: [8, 8, 8], fov: 50 }}>
-      <Lighting />
+      <Canvas shadows camera={{ position: [8, 4, 8], fov: 50 }}>
+        <Lighting />
 
-      {/* <axesHelper args={[2]} /> */}
-      {terrainSampler && <Terrain mapPoints={terrainSampler.mapPoints} />}
-      {terrainSampler && (
-        <Trail
-          csvUrl={`${import.meta.env.BASE_URL}trail.csv`}
-          width={0.1}
-          terrainSampler={terrainSampler}
-          color={"#fff4bd"}
-          onLoad={() => setLoaded(true)}
+        {/* <axesHelper args={[2]} /> */}
+        {terrainSampler && <Terrain mapPoints={terrainSampler.mapPoints} />}
+        {terrainSampler && (
+          <Trail
+            csvUrl={`${import.meta.env.BASE_URL}trail.csv`}
+            width={0.1}
+            terrainSampler={terrainSampler}
+            color={"#fff4bd"}
+            onLoad={() => setLoaded(true)}
+          />
+        )}
+        {terrainSampler && (
+          <Pin
+            x={pinPosition.x}
+            y={pinPosition.y}
+            terrainSampler={terrainSampler}
+            color="#ff4444"
+            radius={0.15}
+          />
+        )}
+        {terrainSampler && (
+          <Pin
+            x={pinPosition.x}
+            y={pinPosition.y}
+            terrainSampler={terrainSampler}
+            color="#ff4444"
+            radius={0.15}
+          />
+        )}
+        <OrbitControls
+          target={orbitTarget}
+          enablePan={false}
+          maxPolarAngle={Math.PI / 2 - (Math.PI / 180) * 20}
+          autoRotate={autoRotate}
+          autoRotateSpeed={0.5}
+          onStart={handleInteractionStart}
+          onEnd={handleInteractionEnd}
         />
-      )}
-      {terrainSampler && (
-        <Pin
-          x={pinPosition.x}
-          y={pinPosition.y}
-          terrainSampler={terrainSampler}
-          color="#ff4444"
-          radius={0.15}
-        />
-      )}
-      {terrainSampler && (
-        <Pin
-          x={pinPosition.x}
-          y={pinPosition.y}
-          terrainSampler={terrainSampler}
-          color="#ff4444"
-          radius={0.15}
-        />
-      )}
-      <OrbitControls
-        target={orbitTarget}
-        enablePan={false}
-        maxPolarAngle={Math.PI / 2 - (Math.PI / 180) * 20}
-        autoRotate={autoRotate}
-        autoRotateSpeed={0.5}
-        onStart={handleInteractionStart}
-        onEnd={handleInteractionEnd}
-      />
       </Canvas>
     </>
   );

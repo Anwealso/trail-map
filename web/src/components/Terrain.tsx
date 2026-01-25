@@ -137,7 +137,7 @@ function addTerrainShader(mat: THREE.Material) {
       h = clamp(h, 0.0, 1.0);
       
       vec3 snowColor = vec3(1.0, 1.0, 1.0);
-      vec3 riverColor = vec3(0.0, 0.1, 0.9);
+      vec3 riverColor = vec3(0.2, 0.45, 0.85); // Slightly more saturated blue, less pale
       
       float snowMask = smoothstep(0.7, 0.8, h);
       float riverMask = 1.0 - smoothstep(0.098, 0.102, h); // Dramatically reduced edge blur

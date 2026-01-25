@@ -93,7 +93,7 @@ function createClayTexture(): {
     const n = getNoise(nx, ny);
     bumpData[i] = Math.floor(Math.max(0, Math.min(1, n)) * 255);
     // Pockmarks/Grit are rougher
-    roughnessData[i] = Math.floor(lerp(0.7, 1.0, n));
+    roughnessData[i] = Math.floor(lerp(0.8, 1.0, n) * 255);
   }
 
   const bumpMap = new THREE.DataTexture(
@@ -119,8 +119,8 @@ function createClayTexture(): {
 
 export function createClayMaterial({
   color = 0xc28564,
-  roughness = 0.9,
-  metalness = 0.1,
+  roughness = 1.0,
+  metalness = 0.0,
   bumpScale = 0.15,
   side = THREE.FrontSide,
 }: ClayMaterialParams = {}): THREE.MeshPhysicalMaterial {
@@ -136,6 +136,7 @@ export function createClayMaterial({
     roughnessMap: textures.roughnessMap,
     side,
     transparent: true,
+    clearcoat: 0.0,
   });
 
   return mat;

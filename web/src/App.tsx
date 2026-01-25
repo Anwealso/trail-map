@@ -91,9 +91,9 @@ export default function App() {
         {terrainSampler && (
           <Trail
             csvUrl={`${import.meta.env.BASE_URL}trail.csv`}
-            width={0.1}
+            width={0.05}
             terrainSampler={terrainSampler}
-            color={"#fff4bd"}
+            color={"#ffeb3b"}
             onLoad={() => setLoaded(true)}
           />
         )}

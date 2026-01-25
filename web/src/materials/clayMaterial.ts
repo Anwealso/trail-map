@@ -63,9 +63,9 @@ function createClayTexture(): {
   ctx.fillRect(0, 0, width, height);
 
   // Speckle Layers - shrunk size further and increased count significantly
-  drawSpeckleLayer(10000, [0.1, 0.5], [0.1, 0.5], [3, 6], 0.5, "#000000");
-  drawSpeckleLayer(10000, [0.1, 0.5], [0.1, 0.5], [3, 6], 0.5, "#ffffff");
-  drawSpeckleLayer(5000, [0.05, 0.3], [0.1, 0.4], [3, 6], 0.5, "#221100");
+  drawSpeckleLayer(30000, [0.05, 0.4], [0.1, 0.6], [3, 6], 0.5, "#000000");
+  drawSpeckleLayer(30000, [0.05, 0.4], [0.1, 0.6], [3, 6], 0.5, "#ffffff");
+  drawSpeckleLayer(15000, [0.05, 0.3], [0.1, 0.5], [3, 6], 0.5, "#221100");
 
   const mapTexture = new THREE.CanvasTexture(canvas);
   mapTexture.wrapS = mapTexture.wrapT = THREE.RepeatWrapping;
@@ -93,7 +93,7 @@ function createClayTexture(): {
     const n = getNoise(nx, ny);
     bumpData[i] = Math.floor(Math.max(0, Math.min(1, n)) * 255);
     // Pockmarks/Grit are rougher
-    roughnessData[i] = Math.floor(lerp(0.8, 1.0, n) * 255);
+    roughnessData[i] = Math.floor(lerp(0.95, 1.0, n) * 255);
   }
 
   const bumpMap = new THREE.DataTexture(
@@ -121,7 +121,7 @@ export function createClayMaterial({
   color = 0xc28564,
   roughness = 1.0,
   metalness = 0.0,
-  bumpScale = 0.15,
+  bumpScale = 0.08,
   side = THREE.FrontSide,
 }: ClayMaterialParams = {}): THREE.MeshPhysicalMaterial {
   const textures = createClayTexture();
@@ -137,6 +137,7 @@ export function createClayMaterial({
     side,
     transparent: true,
     clearcoat: 0.0,
+    reflectivity: 0.0,
   });
 
   return mat;

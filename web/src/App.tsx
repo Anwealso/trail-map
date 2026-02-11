@@ -227,7 +227,7 @@ export default function App() {
           />
         )}
         {terrainSampler && <Grass terrainSampler={terrainSampler} count={500000} />}
-        {terrainSampler && <Trees terrainSampler={terrainSampler} count={200} />}
+        {terrainSampler && <Trees terrainSampler={terrainSampler} count={300} />}
         {terrainSampler && (
           <Pin
             x={pinPosition.x}

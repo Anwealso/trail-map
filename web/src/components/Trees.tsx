@@ -2,6 +2,7 @@ import { useMemo } from "react";
 import * as THREE from "three";
 import { TerrainSampler } from "../utils/terrainSampler";
 import { createClayMaterial } from "../materials/clayMaterial";
+import { worley2d } from "../utils/noise";
 
 interface TreesProps {
   terrainSampler: TerrainSampler;
@@ -67,9 +68,13 @@ export function Trees({ terrainSampler, count = 150 }: TreesProps) {
       // (This is a bit hard without the trail texture here, but we can just use randomness)
       
       if (p.threeY >= minTreeHeight && p.threeY <= maxTreeHeight) {
+        // Use Worley noise to create glades
+        const noiseVal = worley2d(p.threeX * 0.8, p.threeZ * 0.8);
+        if (noiseVal > 0.35) continue;
+
         tempObject.position.set(p.threeX, p.threeY, p.threeZ);
         tempObject.rotation.y = Math.random() * Math.PI * 2;
-        const scale = 0.5 + Math.random() * 0.7;
+        const scale = 0.25 + Math.random() * 0.35;
         tempObject.scale.set(scale, scale, scale);
         
         tempObject.updateMatrix();

@@ -4,6 +4,7 @@ import { OrbitControls } from "@react-three/drei";
 import { Terrain } from "./components/Terrain";
 import { useTrailTexture } from "./utils/trailTexture";
 import { Pin } from "./components/Pin";
+import { Grass } from "./components/Grass";
 import { Lighting } from "./components/Lighting";
 import { getFinalMapMeshPointMatrix } from "./utils/heightmapToMesh";
 import { GPSPosition } from "./utils/gpsUtils";
@@ -224,6 +225,7 @@ export default function App() {
             trailTexture={trailTexture}
           />
         )}
+        {terrainSampler && <Grass terrainSampler={terrainSampler} count={500000} />}
         {terrainSampler && (
           <Pin
             x={pinPosition.x}

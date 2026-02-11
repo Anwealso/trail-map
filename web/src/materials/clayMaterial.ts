@@ -6,6 +6,7 @@ interface ClayMaterialParams {
   metalness?: number;
   bumpScale?: number;
   side?: THREE.Side;
+  map?: THREE.Texture;
 }
 
 function createClayTexture(): {
@@ -143,6 +144,7 @@ export function createClayMaterial({
   metalness = 0.0,
   bumpScale = 0.08,
   side = THREE.FrontSide,
+  map,
 }: ClayMaterialParams = {}): THREE.MeshPhysicalMaterial {
   const textures = createClayTexture();
 
@@ -150,7 +152,7 @@ export function createClayMaterial({
     color,
     roughness,
     metalness,
-    map: textures.map,
+    map: map || textures.map,
     bumpMap: textures.bumpMap,
     bumpScale,
     roughnessMap: textures.roughnessMap,

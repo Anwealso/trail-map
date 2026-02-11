@@ -99,14 +99,11 @@ export default function App() {
         const response = await (DeviceOrientationEvent as any).requestPermission();
         if (response === "granted") {
           setOrientationPermission("granted");
-          // Remember that user granted permission
-          localStorage.setItem('orientationPermissionGranted', 'true');
           if (handleOrientationRef.current) {
             window.addEventListener("deviceorientation", handleOrientationRef.current);
           }
         } else {
           setOrientationPermission("denied");
-          localStorage.setItem('orientationPermissionGranted', 'false');
         }
       } catch (error) {
         console.error("Error requesting orientation permission:", error);
@@ -117,6 +114,16 @@ export default function App() {
 
   useEffect(() => {
     setIsSecure(window.isSecureContext);
+
+    const base = import.meta.env.BASE_URL;
+    getFinalMapMeshPointMatrix(`${base}heightmap.jpg`).then((points) => {
+      setterrainSampler(createTerrainHeightSamplerFromPointMatrix(points));
+    });
+
+    if (!window.isSecureContext) {
+      setGpsError("Insecure Context (Requires HTTPS)");
+      return;
+    }
 
     // Device orientation handler - defined at component level so it can be referenced
     const handleOrientation = (event: DeviceOrientationEvent) => {
@@ -135,10 +142,7 @@ export default function App() {
 
     // Check if we need to request permission (iOS 13+)
     if (typeof (DeviceOrientationEvent as any).requestPermission === "function") {
-      // Check if user has granted permission before
-      const hasGrantedBefore = localStorage.getItem('orientationPermissionGranted') === 'true';
-      // Still need to show button, but can indicate they've done it before
-      setOrientationPermission(hasGrantedBefore ? "prompt" : "prompt");
+      setOrientationPermission("prompt");
     } else {
       window.addEventListener("deviceorientation", handleOrientation);
       setOrientationPermission("granted");
@@ -261,9 +265,7 @@ export default function App() {
                     borderRadius: "4px",
                   }}
                 >
-                  {localStorage.getItem('orientationPermissionGranted') === 'true' 
-                    ? "Re-enable Compass" 
-                    : "Enable Compass (iOS)"}
+                  Enable Compass (iOS)
                 </button>
               )}
             </div>

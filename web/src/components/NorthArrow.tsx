@@ -16,18 +16,18 @@ export function NorthArrow({
   position,
   size = 0.3,
 }: NorthArrowProps) {
-  // Default position: top-right corner of the map (high X, high Y in world coords)
+  // Default position: right side at world Y = 0 (world Z axis = 0)
   const arrowPosition = useMemo(() => {
-    const pos = position || { x: 9, y: 9 }; // Near top-right corner
+    const pos = position || { x: 9, y: 0 }; // Right side at world Y = 0
     const coordinate = Coordinate.fromWorldCoords(pos.x, pos.y);
     const point = terrainSampler.getClosestMapPoint(coordinate);
-    
+
     if (!point) {
       // Fallback to a safe position
-      return new THREE.Vector3(9, 0.5, 9);
+      return new THREE.Vector3(9, size * 0.5, 0);
     }
-    
-    // Position slightly above terrain
+
+    // Position at terrain height + half size offset
     return new THREE.Vector3(point.threeX, point.threeY + size * 0.5, point.threeZ);
   }, [position, terrainSampler, size]);
 

@@ -14,6 +14,10 @@ import {
   TerrainSampler,
 } from "./utils/terrainSampler";
 import {
+  useMockGPSPosition,
+  createMockGPSProvider,
+} from "./utils/useMockGPSPosition";
+import {
   TOPOMAP_GAME_SIZE_LIMIT_X,
   TOPOMAP_GAME_SIZE_LIMIT_Y,
   MAP_AUTO_ROTATE_ENABLED,
@@ -21,7 +25,6 @@ import {
 import "./App.css";
 
 export default function App() {
-  const [pinPosition] = useState({ x: 4, y: 6 }); // world coordinates in km; map spans [0,10] x [0,10]
   const [terrainSampler, setterrainSampler] = useState<TerrainSampler | null>(
     null,
   );
@@ -32,11 +35,34 @@ export default function App() {
   const [gpsError, setGpsError] = useState<string | null>(null);
   const [isSecure, setIsSecure] = useState(true);
   const watchIdRef = useRef<number | null>(null);
+  const [useMockGPS, setUseMockGPS] = useState(true); // Toggle for mock GPS
+  const mockStopRef = useRef<(() => void) | null>(null);
 
   const trailCsvUrl = `${import.meta.env.BASE_URL}trail_2.csv`;
   const { texture: trailTexture, sampler: trailSampler } = useTrailTexture(trailCsvUrl);
 
+  // GPS-to-map position translation hook
+  const { mapPosition, updateFromGPS, isInitialized } = useMockGPSPosition({
+    realWorldSpanMeters: 10, // 10m real movement = full map width
+  });
+
   const startGpsWatch = () => {
+    if (useMockGPS) {
+      // Start mock GPS provider
+      const mockProvider = createMockGPSProvider({
+        simulateMovement: true,
+        movementSpeedMetersPerSecond: 0.5,
+      });
+      
+      mockStopRef.current = mockProvider.startMovement((pos) => {
+        setGpsPosition(pos);
+        updateFromGPS(pos);
+      });
+      
+      setGpsError(null);
+      return;
+    }
+
     if (!navigator.geolocation) {
       setGpsError("Geolocation not supported");
       return;
@@ -48,18 +74,22 @@ export default function App() {
 
     navigator.geolocation.getCurrentPosition(
       (position) => {
-        setGpsPosition({
+        const pos: GPSPosition = {
           latitude: position.coords.latitude,
           longitude: position.coords.longitude,
-        });
+        };
+        setGpsPosition(pos);
+        updateFromGPS(pos);
         setGpsError(null);
         
         watchIdRef.current = navigator.geolocation.watchPosition(
-          (pos) => {
-            setGpsPosition({
-              latitude: pos.coords.latitude,
-              longitude: pos.coords.longitude,
-            });
+          (watchPos) => {
+            const newPos: GPSPosition = {
+              latitude: watchPos.coords.latitude,
+              longitude: watchPos.coords.longitude,
+            };
+            setGpsPosition(newPos);
+            updateFromGPS(newPos);
           },
           (err) => console.error("Watch error:", err),
           { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 }
@@ -99,8 +129,11 @@ export default function App() {
       if (watchIdRef.current !== null) {
         navigator.geolocation.clearWatch(watchIdRef.current);
       }
+      if (mockStopRef.current) {
+        mockStopRef.current();
+      }
     };
-  }, []);
+  }, [useMockGPS]);
 
   useEffect(() => {
     if (terrainSampler && trailTexture) {
@@ -193,10 +226,35 @@ export default function App() {
               </button>
             </div>
           ) : gpsPosition ? (
-            `Lat: ${gpsPosition.latitude.toFixed(6)}, Lng: ${gpsPosition.longitude.toFixed(6)}`
+            <div>
+              <div>Lat: {gpsPosition.latitude.toFixed(6)}, Lng: {gpsPosition.longitude.toFixed(6)}</div>
+              <div>Map: ({mapPosition.x.toFixed(2)}, {mapPosition.y.toFixed(2)}) {isInitialized ? "" : "(initializing...)"}</div>
+            </div>
           ) : (
             "Fetching GPS..."
           )}
+          <div style={{ marginTop: "10px" }}>
+            <label style={{ display: "flex", alignItems: "center", gap: "8px", cursor: "pointer" }}>
+              <input
+                type="checkbox"
+                checked={useMockGPS}
+                onChange={(e) => {
+                  setUseMockGPS(e.target.checked);
+                  // Restart GPS with new mode
+                  if (watchIdRef.current !== null) {
+                    navigator.geolocation.clearWatch(watchIdRef.current);
+                    watchIdRef.current = null;
+                  }
+                  if (mockStopRef.current) {
+                    mockStopRef.current();
+                    mockStopRef.current = null;
+                  }
+                  setTimeout(() => startGpsWatch(), 100);
+                }}
+              />
+              <span>Use Mock GPS</span>
+            </label>
+          </div>
         </div>
       </div>
       <div
@@ -232,17 +290,8 @@ export default function App() {
         {terrainSampler && <Trees terrainSampler={terrainSampler} count={300} />}
         {terrainSampler && (
           <Pin
-            x={pinPosition.x}
-            y={pinPosition.y}
-            terrainSampler={terrainSampler}
-            color="#ff4444"
-            radius={0.15}
-          />
-        )}
-        {terrainSampler && (
-          <Pin
-            x={pinPosition.x}
-            y={pinPosition.y}
+            x={mapPosition.x}
+            y={mapPosition.y}
             terrainSampler={terrainSampler}
             color="#ff4444"
             radius={0.15}

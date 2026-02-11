@@ -42,7 +42,7 @@ export default function App() {
 
   // GPS-to-map position translation hook
   const { mapPosition, updateFromGPS, isInitialized } = useMockGPSPosition({
-    realWorldSpanMeters: 10, // 10m real movement = full map width
+    realWorldSpanMeters: 20, // 20m real movement = full map width
   });
 
   const startGpsWatch = () => {

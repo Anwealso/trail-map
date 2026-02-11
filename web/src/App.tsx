@@ -145,6 +145,7 @@ export default function App() {
           position: "fixed",
           top: "10px",
           left: "10px",
+          right: "10px",
           color: "black",
           zIndex: 1100,
           fontFamily: "monospace",
@@ -166,13 +167,15 @@ export default function App() {
                 padding: "10px",
                 borderRadius: "5px",
                 fontSize: "12px",
+                marginRight: "10px",
+                alignSelf: "flex-start",
               }}
             >
               ⚠️ GPS requires HTTPS. The browser will block location on insecure
               connections.
             </div>
           ) : gpsError ? (
-            <div style={{ display: "flex", flexDirection: "column" }}>
+            <div style={{ display: "flex", flexDirection: "column", marginRight: "10px", alignSelf: "flex-start" }}>
               <span style={{ color: "#ff4444" }}>Error: {gpsError}</span>
               <button
                 onClick={startGpsWatch}

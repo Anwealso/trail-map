@@ -37,9 +37,11 @@ export function useTrailTexture(csvUrl: string | null) {
       ctx.fillRect(0, 0, canvas.width, canvas.height);
 
       ctx.strokeStyle = "white";
-      ctx.lineWidth = 12; // Adjusted for 2048px canvas and desired width
+      ctx.lineWidth = 8;
       ctx.lineJoin = "round";
       ctx.lineCap = "round";
+      ctx.shadowBlur = 12;
+      ctx.shadowColor = "white";
 
       ctx.beginPath();
       points.forEach((p, i) => {

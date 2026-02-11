@@ -86,8 +86,6 @@ export function Grass({ terrainSampler, count = 500000 }: GrassProps) {
       }
     }
 
-    const midHeight = minH + (maxH - minH) * 0.45; 
-
     let placedCount = 0;
     const maxAttempts = count * 25; // Even higher attempts to satisfy noise masking
 
@@ -115,8 +113,10 @@ export function Grass({ terrainSampler, count = 500000 }: GrassProps) {
       const coord = Coordinate.fromGameCoords(x, z);
       const h = terrainSampler.getHeightAt(coord);
       
-      // Basic bounds check (using height range of map)
-      if (h < midHeight && h > minH + 0.1) {
+      const normalizedH = (h - minH) / Math.max(0.0001, maxH - minH);
+      
+      // Start grass slightly above the water line (0.102)
+      if (normalizedH < 0.45 && normalizedH > 0.11) {
         const wobble = simplex2d(x * 1.492, z * 1.492) * 0.05;
         tempObject.position.set(x, h + wobble, z);
         tempObject.rotation.y = Math.random() * Math.PI;

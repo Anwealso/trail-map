@@ -30,85 +30,44 @@ export function Pin({
   const sphereRadius = radius / Math.cos(coneAngle);
   const sphereOffset = height / 2 + sphereRadius * Math.sin(coneAngle);
 
-  const geometry = useMemo(() => {
-    try {
-      const coneGeo = new THREE.ConeGeometry(radius, height, 16, 1, true);
-      coneGeo.rotateX(Math.PI);
+  // Create the main pin geometry (cone + sphere)
+  const pinGeometry = useMemo(() => {
+    const coneGeo = new THREE.ConeGeometry(radius, height, 16, 1, true);
+    coneGeo.rotateX(Math.PI);
 
-      const sphereGeo = new THREE.SphereGeometry(
-        sphereRadius,
-        16,
-        16,
-        0,
-        2 * Math.PI,
-        0,
-        Math.PI / 2 + coneAngle,
-      );
-      sphereGeo.translate(0, sphereOffset, 0);
+    const sphereGeo = new THREE.SphereGeometry(
+      sphereRadius,
+      16,
+      16,
+      0,
+      2 * Math.PI,
+      0,
+      Math.PI / 2 + coneAngle,
+    );
+    sphereGeo.translate(0, sphereOffset, 0);
 
-      // Create white arrow on top
-      const arrowShape = new THREE.Shape();
-      const arrowSize = radius * 1.2;
-      const arrowHalfWidth = arrowSize * 0.4;
+    let merged = BufferGeometryUtils.mergeGeometries([coneGeo, sphereGeo]);
+    merged = BufferGeometryUtils.mergeVertices(merged);
+    merged.computeVertexNormals();
+    return merged;
+  }, [radius, height, sphereRadius, sphereOffset, coneAngle]);
 
-      // Triangle pointing up (in local Y)
-      arrowShape.moveTo(0, arrowSize); // Tip
-      arrowShape.lineTo(-arrowHalfWidth, 0); // Bottom left
-      arrowShape.lineTo(arrowHalfWidth, 0); // Bottom right
-      arrowShape.lineTo(0, arrowSize); // Back to tip
-
-      const arrowGeo = new THREE.ExtrudeGeometry(arrowShape, {
-        depth: radius * 0.15,
-        bevelEnabled: false,
-      });
-      arrowGeo.rotateX(-Math.PI / 2); // Lay flat
-      arrowGeo.rotateY(Math.PI); // Point in -Z direction initially
-      arrowGeo.translate(0, sphereOffset + sphereRadius * 0.3, 0); // Position on top of sphere
-
-      let merged = BufferGeometryUtils.mergeGeometries([coneGeo, sphereGeo, arrowGeo]);
-      merged = BufferGeometryUtils.mergeVertices(merged);
-      merged.computeVertexNormals();
-
-      // Create color attribute
-      const count = merged.attributes.position.count;
-      const colors = new Float32Array(count * 3);
-      const colorObj = new THREE.Color(color);
-      const whiteColor = new THREE.Color("#ffffff");
-
-      // After mergeVertices, the vertex count changes, so we need to estimate
-      // The arrow vertices are at the end before mergeVertices
-      // After mergeVertices, vertices are deduplicated
-      // We'll use a heuristic: arrow vertices have higher Y values
-      const positions = merged.attributes.position.array as Float32Array;
-      const arrowYThreshold = sphereOffset + sphereRadius * 0.2;
-
-      for (let i = 0; i < count; i++) {
-        const y = positions[i * 3 + 1]; // Y coordinate
-        if (y > arrowYThreshold) {
-          // Likely arrow - use white
-          colors[i * 3] = whiteColor.r;
-          colors[i * 3 + 1] = whiteColor.g;
-          colors[i * 3 + 2] = whiteColor.b;
-        } else {
-          // Pin body - use specified color
-          colors[i * 3] = colorObj.r;
-          colors[i * 3 + 1] = colorObj.g;
-          colors[i * 3 + 2] = colorObj.b;
-        }
-      }
-
-      // Set color attribute - use 'color' as the attribute name for vertex colors
-      merged.setAttribute("color", new THREE.BufferAttribute(colors, 3));
-
-      return merged;
-    } catch (error) {
-      console.error("Error creating pin geometry:", error);
-      // Return simple fallback geometry
-      const fallback = new THREE.ConeGeometry(radius, height, 16);
-      fallback.rotateX(Math.PI);
-      return fallback;
-    }
-  }, [radius, height, sphereRadius, sphereOffset, coneAngle, color]);
+  // Create white arrow geometry separately
+  const arrowGeometry = useMemo(() => {
+    const arrowSize = radius * 1.2;
+    const arrowHalfWidth = arrowSize * 0.4;
+    const arrowThickness = radius * 0.15;
+    const arrowY = sphereOffset + sphereRadius * 0.3;
+    
+    // Create a simple flat arrow triangle using ConeGeometry (pointing up)
+    const arrowGeo = new THREE.ConeGeometry(arrowHalfWidth, arrowSize, 3);
+    arrowGeo.rotateX(Math.PI); // Point down (toward -Y)
+    arrowGeo.rotateY(Math.PI); // Rotate to align with -Z
+    arrowGeo.scale(1, 0.3, 1); // Flatten it
+    arrowGeo.translate(0, arrowY + arrowSize * 0.15, -arrowSize * 0.3); // Position on top
+    
+    return arrowGeo;
+  }, [radius, sphereRadius, sphereOffset]);
 
   useEffect(() => {
     try {
@@ -136,9 +95,17 @@ export function Pin({
   // In Three.js, rotation is counter-clockwise, so we negate heading
   const rotationY = THREE.MathUtils.degToRad(-heading);
 
-  const material = useMemo(() => {
+  const pinMaterial = useMemo(() => {
     return new THREE.MeshStandardMaterial({
-      vertexColors: true,
+      color: color,
+      roughness: 0.4,
+      metalness: 0.1,
+    });
+  }, [color]);
+
+  const arrowMaterial = useMemo(() => {
+    return new THREE.MeshStandardMaterial({
+      color: "#ffffff",
       roughness: 0.4,
       metalness: 0.1,
     });
@@ -147,11 +114,9 @@ export function Pin({
   if (!position) return null;
 
   return (
-    <mesh
-      position={position}
-      geometry={geometry}
-      material={material}
-      rotation={[0, rotationY, 0]}
-    />
+    <group position={position} rotation={[0, rotationY, 0]}>
+      <mesh geometry={pinGeometry} material={pinMaterial} />
+      <mesh geometry={arrowGeometry} material={arrowMaterial} />
+    </group>
   );
 }

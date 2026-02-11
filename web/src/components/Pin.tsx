@@ -30,45 +30,11 @@ export function Pin({
   const sphereRadius = radius / Math.cos(coneAngle);
   const sphereOffset = height / 2 + sphereRadius * Math.sin(coneAngle);
 
-  // Create arrow texture - draws on top portion of sphere only
-  const arrowTexture = useMemo(() => {
-    const canvas = document.createElement("canvas");
-    canvas.width = 512;
-    canvas.height = 512;
-    const ctx = canvas.getContext("2d")!;
-
-    // Fill entire canvas with base color
-    ctx.fillStyle = color;
-    ctx.fillRect(0, 0, 512, 512);
-
-    // Draw white arrow in the top portion only (maps to top of sphere)
-    // In UV space: v=0 is bottom, v=1 is top
-    // In canvas: y=0 is top, y=512 is bottom
-    // Top 20% of canvas maps to top cap of sphere
-    const arrowSize = 80;
-    ctx.fillStyle = "#ffffff";
-    ctx.beginPath();
-    // Arrow pointing up (toward top of texture = top of sphere)
-    ctx.moveTo(256, 60); // Tip
-    ctx.lineTo(196, 160); // Bottom left
-    ctx.lineTo(316, 160); // Bottom right
-    ctx.closePath();
-    ctx.fill();
-
-    const texture = new THREE.CanvasTexture(canvas);
-    texture.needsUpdate = true;
-    // Prevent texture wrapping which causes the arrow to appear at bottom too
-    texture.wrapS = THREE.ClampToEdgeWrapping;
-    texture.wrapT = THREE.ClampToEdgeWrapping;
-    return texture;
-  }, [color]);
-
-  // Create the pin geometry with UVs that map top of texture to top of sphere
-  const geometry = useMemo(() => {
+  // Create the pin geometry (cone + sphere) - no texture
+  const pinGeometry = useMemo(() => {
     const coneGeo = new THREE.ConeGeometry(radius, height, 32, 1, true);
     coneGeo.rotateX(Math.PI);
 
-    // Create sphere with UVs that map the top of the texture to the top of the sphere
     const sphereGeo = new THREE.SphereGeometry(
       sphereRadius,
       32,
@@ -80,23 +46,37 @@ export function Pin({
     );
     sphereGeo.translate(0, sphereOffset, 0);
 
-    // Modify UVs for sphere - only use top portion of texture
-    const uvAttribute = sphereGeo.attributes.uv;
-    for (let i = 0; i < uvAttribute.count; i++) {
-      const v = uvAttribute.getY(i);
-      // Original v goes from 0 (cutoff) to 1 (top pole)
-      // Remap so top 30% of texture covers the visible sphere
-      // v=1 (top) stays at v=0, v=0 (bottom cutoff) goes to v=0.3
-      const newV = 0.3 * (1 - v);
-      uvAttribute.setY(i, newV);
-    }
-    uvAttribute.needsUpdate = true;
-
     let merged = BufferGeometryUtils.mergeGeometries([coneGeo, sphereGeo]);
     merged = BufferGeometryUtils.mergeVertices(merged);
     merged.computeVertexNormals();
     return merged;
   }, [radius, height, sphereRadius, sphereOffset, coneAngle]);
+
+  // Create arrow geometry - a simple flat triangle on top pointing forward (-Z)
+  const arrowGeometry = useMemo(() => {
+    const arrowSize = radius * 0.8;
+    const arrowHalfWidth = arrowSize * 0.5;
+    const arrowY = sphereOffset + sphereRadius * 0.85; // On top of sphere
+    
+    // Create a flat triangle using BufferGeometry
+    // Triangle pointing in -Z direction
+    const vertices = new Float32Array([
+      // Front face (visible)
+      0, arrowY, -sphereRadius * 0.5 - arrowSize,           // Tip (front)
+      -arrowHalfWidth, arrowY, -sphereRadius * 0.5,         // Bottom left (back)
+      arrowHalfWidth, arrowY, -sphereRadius * 0.5,          // Bottom right (back)
+      
+      // Back face
+      0, arrowY - 0.01, -sphereRadius * 0.5 - arrowSize,    // Tip
+      arrowHalfWidth, arrowY - 0.01, -sphereRadius * 0.5,   // Bottom right
+      -arrowHalfWidth, arrowY - 0.01, -sphereRadius * 0.5,  // Bottom left
+    ]);
+    
+    const geo = new THREE.BufferGeometry();
+    geo.setAttribute('position', new THREE.BufferAttribute(vertices, 3));
+    geo.computeVertexNormals();
+    return geo;
+  }, [radius, sphereRadius, sphereOffset]);
 
   useEffect(() => {
     try {
@@ -117,22 +97,28 @@ export function Pin({
   // Calculate rotation based on heading
   const rotationY = THREE.MathUtils.degToRad(-heading);
 
-  const material = useMemo(() => {
+  const pinMaterial = useMemo(() => {
     return new THREE.MeshStandardMaterial({
-      map: arrowTexture,
+      color: color,
       roughness: 0.4,
       metalness: 0.1,
     });
-  }, [arrowTexture]);
+  }, [color]);
+
+  const arrowMaterial = useMemo(() => {
+    return new THREE.MeshStandardMaterial({
+      color: "#ffffff",
+      roughness: 0.4,
+      metalness: 0.1,
+    });
+  }, []);
 
   if (!position) return null;
 
   return (
-    <mesh
-      position={position}
-      geometry={geometry}
-      material={material}
-      rotation={[0, rotationY, 0]}
-    />
+    <group position={position} rotation={[0, rotationY, 0]}>
+      <mesh geometry={pinGeometry} material={pinMaterial} />
+      <mesh geometry={arrowGeometry} material={arrowMaterial} />
+    </group>
   );
 }

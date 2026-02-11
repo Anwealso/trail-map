@@ -116,7 +116,21 @@ export function Grass({ terrainSampler, count = 500000 }: GrassProps) {
       const normalizedH = (h - minH) / Math.max(0.0001, maxH - minH);
       
       // Start grass slightly above the water line (0.102)
-      if (normalizedH < 0.45 && normalizedH > 0.11) {
+      if (normalizedH > 0.11 && normalizedH < 0.45) {
+        // Density falloff near the top (100% at 0.25, 0% at 0.45)
+        const topFadeStart = 0.25;
+        const topFadeEnd = 0.45;
+        let topDensityMultiplier = 1.0;
+        if (normalizedH > topFadeStart) {
+          // Smoothstep: 0 at topFadeStart, 1 at topFadeEnd
+          const t = (normalizedH - topFadeStart) / (topFadeEnd - topFadeStart);
+          const smoothedT = t * t * (3 - 2 * t);
+          topDensityMultiplier = 1.0 - Math.max(0, Math.min(1, smoothedT));
+        }
+        
+        // Apply the top density falloff to the placement probability
+        if (Math.random() > topDensityMultiplier) continue;
+        
         const wobble = simplex2d(x * 1.492, z * 1.492) * 0.05;
         tempObject.position.set(x, h + wobble, z);
         tempObject.rotation.y = Math.random() * Math.PI;

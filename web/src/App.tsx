@@ -4,6 +4,7 @@ import { OrbitControls } from "@react-three/drei";
 import { Terrain } from "./components/Terrain";
 import { useTrailTexture } from "./utils/trailTexture";
 import { Pin } from "./components/Pin";
+import { NorthArrow } from "./components/NorthArrow";
 import { Grass } from "./components/Grass";
 import { Trees } from "./components/Trees";
 import { Lighting } from "./components/Lighting";
@@ -242,6 +243,12 @@ export default function App() {
         )}
         {terrainSampler && trailSampler && <Grass terrainSampler={terrainSampler} count={400000} trailSampler={trailSampler} />}
         {terrainSampler && <Trees terrainSampler={terrainSampler} count={300} />}
+        {terrainSampler && (
+          <NorthArrow
+            terrainSampler={terrainSampler}
+            size={0.25}
+          />
+        )}
         {terrainSampler && (
           <Pin
             x={mapPosition.x}

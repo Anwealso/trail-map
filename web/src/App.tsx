@@ -34,7 +34,7 @@ export default function App() {
   const watchIdRef = useRef<number | null>(null);
 
   const trailCsvUrl = `${import.meta.env.BASE_URL}trail_2.csv`;
-  const trailTexture = useTrailTexture(trailCsvUrl);
+  const { texture: trailTexture, sampler: trailSampler } = useTrailTexture(trailCsvUrl);
 
   const startGpsWatch = () => {
     if (!navigator.geolocation) {
@@ -228,7 +228,7 @@ export default function App() {
             trailTexture={trailTexture}
           />
         )}
-        {terrainSampler && <Grass terrainSampler={terrainSampler} count={400000} />}
+        {terrainSampler && trailSampler && <Grass terrainSampler={terrainSampler} count={400000} trailSampler={trailSampler} />}
         {terrainSampler && <Trees terrainSampler={terrainSampler} count={300} />}
         {terrainSampler && (
           <Pin

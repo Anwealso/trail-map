@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import * as THREE from "three";
 import { TOPOMAP_WORLD_SIZE_X, TOPOMAP_WORLD_SIZE_Y } from "./constants";
 
@@ -13,18 +13,26 @@ async function loadTrailCSV(url: string): Promise<{ x: number; y: number }[]> {
   });
 }
 
+export interface TrailSampler {
+  isOnTrail: (worldX: number, worldY: number) => boolean;
+}
+
 export function useTrailTexture(csvUrl: string | null) {
   const [texture, setTexture] = useState<THREE.Texture | null>(null);
+  const [sampler, setSampler] = useState<TrailSampler | null>(null);
+  const imageDataRef = useRef<ImageData | null>(null);
 
   useEffect(() => {
     if (!csvUrl) {
       setTexture(null);
+      setSampler(null);
+      imageDataRef.current = null;
       return;
     }
 
     let isMounted = true;
 
-    loadTrailCSV(csvUrl).then((points) => {
+    loadTrailCSV(csvUrl).then((loadedPoints) => {
       if (!isMounted) return;
 
       const canvas = document.createElement("canvas");
@@ -44,9 +52,9 @@ export function useTrailTexture(csvUrl: string | null) {
       ctx.shadowColor = "white";
 
       ctx.beginPath();
-      points.forEach((p, i) => {
+      loadedPoints.forEach((p, i) => {
         const u = p.x / TOPOMAP_WORLD_SIZE_X;
-        const v = 1 - p.y / TOPOMAP_WORLD_SIZE_Y;
+        const v = p.y / TOPOMAP_WORLD_SIZE_Y;
         
         const cx = u * canvas.width;
         const cy = v * canvas.height;
@@ -56,11 +64,40 @@ export function useTrailTexture(csvUrl: string | null) {
       });
       ctx.stroke();
 
+      // Store image data for CPU-side sampling
+      imageDataRef.current = ctx.getImageData(0, 0, canvas.width, canvas.height);
+
+      // Create sampler function
+      const trailSampler: TrailSampler = {
+        isOnTrail: (worldX: number, worldY: number) => {
+          if (!imageDataRef.current) return false;
+          
+          // Convert world coordinates to texture coordinates
+          const u = worldX / TOPOMAP_WORLD_SIZE_X;
+          const v = worldY / TOPOMAP_WORLD_SIZE_Y;
+          
+          // Clamp to valid range
+          if (u < 0 || u > 1 || v < 0 || v > 1) return false;
+          
+          // Convert to pixel coordinates
+          const px = Math.floor(u * canvas.width);
+          const py = Math.floor(v * canvas.height);
+          
+          // Get pixel value (check if it's bright - on trail)
+          const index = (py * canvas.width + px) * 4;
+          const red = imageDataRef.current.data[index];
+          
+          // White pixels (trail) have high red values
+          return red > 128;
+        }
+      };
+
       const tex = new THREE.CanvasTexture(canvas);
       tex.minFilter = THREE.LinearFilter;
       tex.magFilter = THREE.LinearFilter;
       tex.needsUpdate = true;
       setTexture(tex);
+      setSampler(trailSampler);
     });
 
     return () => {
@@ -68,5 +105,5 @@ export function useTrailTexture(csvUrl: string | null) {
     };
   }, [csvUrl]);
 
-  return texture;
+  return { texture, sampler };
 }

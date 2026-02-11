@@ -5,13 +5,15 @@ import { TerrainSampler } from "../utils/terrainSampler";
 import { createGrassMaterial } from "../materials/grassMaterial";
 import { Coordinate } from "../utils/Coordinate";
 import { simplex2d, fbm2d } from "../utils/noise";
+import { TrailSampler } from "../utils/trailTexture";
 
 interface GrassProps {
   terrainSampler: TerrainSampler;
   count?: number;
+  trailSampler?: TrailSampler | null;
 }
 
-export function Grass({ terrainSampler, count = 500000 }: GrassProps) {
+export function Grass({ terrainSampler, count = 500000, trailSampler = null }: GrassProps) {
   const meshRef = useRef<THREE.InstancedMesh>(null);
   const material = useMemo(() => createGrassMaterial(), []);
 
@@ -89,9 +91,15 @@ export function Grass({ terrainSampler, count = 500000 }: GrassProps) {
     let placedCount = 0;
     const maxAttempts = count * 25; // Even higher attempts to satisfy noise masking
 
-    const centerX = 5; 
+    const centerX = 5;
     const centerZ = 5;
     const radius = 5;
+
+    // Helper function to check if a point is on the trail using texture sampler
+    const isOnTrail = (x: number, z: number): boolean => {
+      if (!trailSampler) return false;
+      return trailSampler.isOnTrail(x, z);
+    };
 
     for (let i = 0; i < maxAttempts && placedCount < count; i++) {
       // Pick a random point within the circle
@@ -99,6 +107,9 @@ export function Grass({ terrainSampler, count = 500000 }: GrassProps) {
       const theta = Math.random() * 2 * Math.PI;
       const x = centerX + r_val * Math.cos(theta);
       const z = centerZ + r_val * Math.sin(theta);
+
+      // Skip if on the trail
+      if (isOnTrail(x, z)) continue;
 
       // Use FBM noise for realistic foliage patches
       // Higher frequency (1.27) for more numerous "nodes"
@@ -147,7 +158,7 @@ export function Grass({ terrainSampler, count = 500000 }: GrassProps) {
       matrices: tempMatrices.slice(0, placedCount * 16), 
       actualCount: placedCount 
     };
-  }, [terrainSampler, count]);
+  }, [terrainSampler, count, trailSampler]);
 
   useFrame((state) => {
     const uTime = (material as any).userData?.uTime;

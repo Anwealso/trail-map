@@ -16,19 +16,19 @@ export function NorthArrow({
   position,
   size = 0.3,
 }: NorthArrowProps) {
-  // Default position: right side at world Y = 0 (world Z axis = 0)
+  // Default position: centered at bottom edge of map (minimum world Y = 0)
   const arrowPosition = useMemo(() => {
-    const pos = position || { x: 9, y: 0 }; // Right side at world Y = 0
+    const pos = position || { x: 5, y: 0 }; // Center horizontally at bottom edge
     const coordinate = Coordinate.fromWorldCoords(pos.x, pos.y);
     const point = terrainSampler.getClosestMapPoint(coordinate);
 
     if (!point) {
-      // Fallback to a safe position
-      return new THREE.Vector3(9, size * 0.5, 0);
+      // Fallback to bottom edge
+      return new THREE.Vector3(5, size * 0.5, 0);
     }
 
-    // Position at terrain height + half size offset
-    return new THREE.Vector3(point.threeX, point.threeY + size * 0.5, point.threeZ);
+    // Position flush with terrain surface (no elevation offset)
+    return new THREE.Vector3(point.threeX, point.threeY, point.threeZ);
   }, [position, terrainSampler, size]);
 
   // Arrow geometry - pure triangle pointing in negative Z direction (world north)

@@ -33,7 +33,9 @@ export default function App() {
   const [gpsError, setGpsError] = useState<string | null>(null);
   const [isSecure, setIsSecure] = useState(true);
   const [deviceHeading, setDeviceHeading] = useState<number>(0);
+  const [orientationPermission, setOrientationPermission] = useState<"prompt" | "granted" | "denied">("prompt");
   const watchIdRef = useRef<number | null>(null);
+  const handleOrientationRef = useRef<((event: DeviceOrientationEvent) => void) | null>(null);
 
   const trailCsvUrl = `${import.meta.env.BASE_URL}trail_2.csv`;
   const { texture: trailTexture, sampler: trailSampler } = useTrailTexture(trailCsvUrl);
@@ -91,6 +93,25 @@ export default function App() {
     );
   };
 
+  const requestOrientationPermission = async () => {
+    if (typeof (DeviceOrientationEvent as any).requestPermission === "function") {
+      try {
+        const response = await (DeviceOrientationEvent as any).requestPermission();
+        if (response === "granted") {
+          setOrientationPermission("granted");
+          if (handleOrientationRef.current) {
+            window.addEventListener("deviceorientation", handleOrientationRef.current);
+          }
+        } else {
+          setOrientationPermission("denied");
+        }
+      } catch (error) {
+        console.error("Error requesting orientation permission:", error);
+        setOrientationPermission("denied");
+      }
+    }
+  };
+
   useEffect(() => {
     setIsSecure(window.isSecureContext);
 
@@ -104,35 +125,27 @@ export default function App() {
       return;
     }
 
-    startGpsWatch();
-
-    // Device orientation for heading
+    // Device orientation handler - defined at component level so it can be referenced
     const handleOrientation = (event: DeviceOrientationEvent) => {
-      // alpha: rotation around z-axis (compass direction)
-      // On iOS, we need to use webkitCompassHeading if available
       const heading =
         (event as any).webkitCompassHeading ||
         (event.alpha ? 360 - event.alpha : 0);
       if (heading !== null && !isNaN(heading)) {
-        console.log('Device heading:', heading, 'alpha:', event.alpha, 'webkitCompassHeading:', (event as any).webkitCompassHeading);
         setDeviceHeading(heading);
       }
     };
 
-    // Request permission for iOS 13+
-    if (
-      typeof (DeviceOrientationEvent as any).requestPermission === "function"
-    ) {
-      (DeviceOrientationEvent as any)
-        .requestPermission()
-        .then((response: string) => {
-          if (response === "granted") {
-            window.addEventListener("deviceorientation", handleOrientation);
-          }
-        })
-        .catch(console.error);
+    // Store handler in ref so requestOrientationPermission can access it
+    handleOrientationRef.current = handleOrientation;
+
+    startGpsWatch();
+
+    // Check if we need to request permission (iOS 13+)
+    if (typeof (DeviceOrientationEvent as any).requestPermission === "function") {
+      setOrientationPermission("prompt");
     } else {
       window.addEventListener("deviceorientation", handleOrientation);
+      setOrientationPermission("granted");
     }
 
     return () => {
@@ -238,6 +251,23 @@ export default function App() {
               <div>Lat: {gpsPosition.latitude.toFixed(6)}, Lng: {gpsPosition.longitude.toFixed(6)}</div>
               <div>Map: ({mapPosition.x.toFixed(2)}, {mapPosition.y.toFixed(2)}) {isInitialized ? "" : "(calibrating...)"}</div>
               <div>Heading: {deviceHeading.toFixed(1)}°</div>
+              {orientationPermission === "prompt" && (
+                <button
+                  onClick={requestOrientationPermission}
+                  style={{
+                    marginTop: "5px",
+                    padding: "4px 8px",
+                    fontSize: "12px",
+                    cursor: "pointer",
+                    backgroundColor: "#4CAF50",
+                    border: "none",
+                    color: "white",
+                    borderRadius: "4px",
+                  }}
+                >
+                  Enable Compass (iOS)
+                </button>
+              )}
             </div>
           ) : (
             "Fetching GPS..."

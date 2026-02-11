@@ -32,6 +32,7 @@ export default function App() {
   const [gpsPosition, setGpsPosition] = useState<GPSPosition | null>(null);
   const [gpsError, setGpsError] = useState<string | null>(null);
   const [isSecure, setIsSecure] = useState(true);
+  const [deviceHeading, setDeviceHeading] = useState<number>(0);
   const watchIdRef = useRef<number | null>(null);
 
   const trailCsvUrl = `${import.meta.env.BASE_URL}trail_2.csv`;
@@ -92,7 +93,7 @@ export default function App() {
 
   useEffect(() => {
     setIsSecure(window.isSecureContext);
-    
+
     const base = import.meta.env.BASE_URL;
     getFinalMapMeshPointMatrix(`${base}heightmap.jpg`).then((points) => {
       setterrainSampler(createTerrainHeightSamplerFromPointMatrix(points));
@@ -105,10 +106,39 @@ export default function App() {
 
     startGpsWatch();
 
+    // Device orientation for heading
+    const handleOrientation = (event: DeviceOrientationEvent) => {
+      // alpha: rotation around z-axis (compass direction)
+      // On iOS, we need to use webkitCompassHeading if available
+      const heading =
+        (event as any).webkitCompassHeading ||
+        (event.alpha ? 360 - event.alpha : 0);
+      if (heading !== null && !isNaN(heading)) {
+        setDeviceHeading(heading);
+      }
+    };
+
+    // Request permission for iOS 13+
+    if (
+      typeof (DeviceOrientationEvent as any).requestPermission === "function"
+    ) {
+      (DeviceOrientationEvent as any)
+        .requestPermission()
+        .then((response: string) => {
+          if (response === "granted") {
+            window.addEventListener("deviceorientation", handleOrientation);
+          }
+        })
+        .catch(console.error);
+    } else {
+      window.addEventListener("deviceorientation", handleOrientation);
+    }
+
     return () => {
       if (watchIdRef.current !== null) {
         navigator.geolocation.clearWatch(watchIdRef.current);
       }
+      window.removeEventListener("deviceorientation", handleOrientation);
     };
   }, []);
 
@@ -258,6 +288,7 @@ export default function App() {
             terrainSampler={terrainSampler}
             color="#ff4444"
             radius={0.15}
+            heading={deviceHeading}
           />
         )}
         <OrbitControls

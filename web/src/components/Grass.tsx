@@ -136,8 +136,9 @@ export function Grass({ terrainSampler, count = 500000 }: GrassProps) {
   }, [terrainSampler, count]);
 
   useFrame((state) => {
-    if (material.uniforms.uTime) {
-      material.uniforms.uTime.value = state.clock.elapsedTime;
+    const uTime = (material as any).userData?.uTime;
+    if (uTime) {
+      uTime.value = state.clock.elapsedTime;
     }
   });
 

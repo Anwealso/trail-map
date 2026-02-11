@@ -49,7 +49,7 @@ export function NorthArrow({
     shape.lineTo(0, height); // Back to tip
     
     const extrudeSettings = {
-      depth: 0.1,
+      depth: 0.01,
       bevelEnabled: false,
     };
     

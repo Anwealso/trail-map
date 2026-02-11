@@ -5,6 +5,7 @@ import { Terrain } from "./components/Terrain";
 import { useTrailTexture } from "./utils/trailTexture";
 import { Pin } from "./components/Pin";
 import { Grass } from "./components/Grass";
+import { Trees } from "./components/Trees";
 import { Lighting } from "./components/Lighting";
 import { getFinalMapMeshPointMatrix } from "./utils/heightmapToMesh";
 import { GPSPosition } from "./utils/gpsUtils";
@@ -226,6 +227,7 @@ export default function App() {
           />
         )}
         {terrainSampler && <Grass terrainSampler={terrainSampler} count={500000} />}
+        {terrainSampler && <Trees terrainSampler={terrainSampler} count={200} />}
         {terrainSampler && (
           <Pin
             x={pinPosition.x}

@@ -31,42 +31,23 @@ export function NorthArrow({
     return new THREE.Vector3(point.threeX, point.threeY + size * 0.5, point.threeZ);
   }, [position, terrainSampler, size]);
 
-  // Arrow geometry pointing in negative Z direction (world north / into screen)
+  // Arrow geometry - pure triangle pointing in negative Z direction (world north)
   const arrowGeometry = useMemo(() => {
     const shape = new THREE.Shape();
     
-    // Draw arrow pointing up (in 2D shape), then we'll rotate it
-    const w = size * 0.3; // Half width of arrow base
-    const h = size; // Arrow length
-    const headW = size * 0.5; // Half width of arrow head
-    const headH = size * 0.4; // Arrow head length
-    const shaftH = h - headH; // Shaft length
+    // Pure triangle: base at bottom, tip at top
+    const halfWidth = size * 0.5; // Half width of triangle base
+    const height = size; // Triangle height
     
-    // Start at bottom center
-    shape.moveTo(0, 0);
-    // Bottom left of shaft
-    shape.lineTo(-w, 0);
-    // Top left of shaft
-    shape.lineTo(-w, shaftH);
-    // Bottom left of head
-    shape.lineTo(-headW, shaftH);
-    // Tip of arrow (pointing in +Y in 2D shape coords)
-    shape.lineTo(0, h);
-    // Bottom right of head
-    shape.lineTo(headW, shaftH);
-    // Top right of shaft
-    shape.lineTo(w, shaftH);
-    // Bottom right of shaft
-    shape.lineTo(w, 0);
-    // Close shape
-    shape.lineTo(0, 0);
+    // Triangle pointing up in 2D shape coords
+    shape.moveTo(0, height); // Tip at top
+    shape.lineTo(-halfWidth, 0); // Bottom left
+    shape.lineTo(halfWidth, 0); // Bottom right
+    shape.lineTo(0, height); // Back to tip
     
     const extrudeSettings = {
-      depth: size * 0.05,
-      bevelEnabled: true,
-      bevelThickness: size * 0.02,
-      bevelSize: size * 0.01,
-      bevelSegments: 2,
+      depth: 0.1,
+      bevelEnabled: false,
     };
     
     const geometry = new THREE.ExtrudeGeometry(shape, extrudeSettings);

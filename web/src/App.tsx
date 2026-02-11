@@ -114,6 +114,7 @@ export default function App() {
         (event as any).webkitCompassHeading ||
         (event.alpha ? 360 - event.alpha : 0);
       if (heading !== null && !isNaN(heading)) {
+        console.log('Device heading:', heading, 'alpha:', event.alpha, 'webkitCompassHeading:', (event as any).webkitCompassHeading);
         setDeviceHeading(heading);
       }
     };
@@ -236,6 +237,7 @@ export default function App() {
             <div>
               <div>Lat: {gpsPosition.latitude.toFixed(6)}, Lng: {gpsPosition.longitude.toFixed(6)}</div>
               <div>Map: ({mapPosition.x.toFixed(2)}, {mapPosition.y.toFixed(2)}) {isInitialized ? "" : "(calibrating...)"}</div>
+              <div>Heading: {deviceHeading.toFixed(1)}°</div>
             </div>
           ) : (
             "Fetching GPS..."

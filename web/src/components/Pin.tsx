@@ -114,6 +114,7 @@ export function Pin({
   }, [x, y, terrainSampler, radius, height]);
 
   // Calculate rotation based on heading
+  console.log('Pin heading prop:', heading);
   const rotationY = THREE.MathUtils.degToRad(-heading);
 
   const pinMaterial = useMemo(() => {

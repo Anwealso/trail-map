@@ -160,5 +160,59 @@ export function createClayMaterial({
     reflectivity: 0.0,
   });
 
+  // Add instance-based edge fade for foliage (trees)
+  mat.onBeforeCompile = (shader) => {
+    shader.vertexShader = shader.vertexShader.replace(
+      "#include <common>",
+      `#include <common>
+       #ifndef TERRAIN_SHADER
+       varying float vFade;
+       #endif`
+    ).replace(
+      "#include <begin_vertex>",
+      `
+      #include <begin_vertex>
+      
+      #ifndef TERRAIN_SHADER
+      #ifdef USE_INSTANCING
+      // Calculate edge fade (matching Terrain.tsx logic)
+      vec3 instancePos = instanceMatrix[3].xyz;
+      float radius = 5.0;
+      float centerX = 5.0;
+      float centerZ = 5.0;
+      float fadeWidth = radius * 0.2;
+      
+      float dx = instancePos.x - centerX;
+      float dz = instancePos.z - centerZ;
+      float dist = sqrt(dx * dx + dz * dz);
+      
+      float t = (dist - (radius - fadeWidth)) / fadeWidth;
+      float smoothstepFade = clamp(t, 0.0, 1.0);
+      smoothstepFade = smoothstepFade * smoothstepFade * (3.0 - 2.0 * smoothstepFade);
+      vFade = 1.0 - smoothstepFade;
+      #else
+      vFade = 1.0;
+      #endif
+      #endif
+      `
+    );
+
+    shader.fragmentShader = shader.fragmentShader.replace(
+      "#include <common>",
+      `#include <common>
+       #ifndef TERRAIN_SHADER
+       varying float vFade;
+       #endif`
+    ).replace(
+      "#include <opaque_fragment>",
+      `
+      #ifndef TERRAIN_SHADER
+      diffuseColor.a *= vFade;
+      #endif
+      #include <opaque_fragment>
+      `
+    );
+  };
+
   return mat;
 }

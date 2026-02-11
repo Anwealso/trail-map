@@ -4,6 +4,7 @@ export function createGrassMaterial() {
   const vertexShader = `
     varying vec2 vUv;
     varying vec3 vInstancePos;
+    varying float vFade;
     uniform float uTime;
     
     //
@@ -46,34 +47,61 @@ export function createGrassMaterial() {
       return 2.3 * n_xy;
     }
 
+    float fbm(vec2 p) {
+      float v = 0.0;
+      float a = 0.5;
+      mat2 rot = mat2(1.6, 1.2, -1.2, 1.6);
+      for (int i = 0; i < 3; i++) {
+        v += a * cnoise(p);
+        p = rot * p * 2.0;
+        a *= 0.5;
+      }
+      return v;
+    }
+
     void main() {
       vUv = uv;
       
       // Get world position from instance matrix
       vec3 instancePos = instanceMatrix[3].xyz;
       vInstancePos = instancePos;
-      
-      // Wind motion using noise
 
-      float windScale = 2.0;
-      float windSpeed = 1.2;
-      float noiseVal = cnoise(instancePos.xz * 0.5 + uTime * 0.2);
+      // Calculate edge fade (matching Terrain.tsx logic)
+      float radius = 5.0;
+      float centerX = 5.0;
+      float centerZ = 5.0;
+      float fadeWidth = radius * 0.2;
       
-      // Main waving motion
-      float wave = sin(uTime * windSpeed + instancePos.x * windScale + instancePos.z * windScale) * 0.5 + 0.5;
-      wave *= noiseVal * 0.5 + 0.5;
+      float dx = instancePos.x - centerX;
+      float dz = instancePos.z - centerZ;
+      float dist = sqrt(dx * dx + dz * dz);
+      
+      float t = (dist - (radius - fadeWidth)) / fadeWidth;
+      float smoothstepFade = clamp(t, 0.0, 1.0);
+      smoothstepFade = smoothstepFade * smoothstepFade * (3.0 - 2.0 * smoothstepFade);
+      vFade = 1.0 - smoothstepFade;
+      
+      // Wind motion using FBM for organic feel
+
+      vec2 windUV = instancePos.xz * 0.4 + vec2(uTime * 0.08, uTime * 0.04);
+      float windNoise = fbm(windUV);
+      
+      // Add a secondary, faster layer for "gusts"
+      float gusts = fbm(windUV * 2.5 - uTime * 0.06) * 0.4;
+      
+      float windStrength = (windNoise + gusts) * 0.5 + 0.5;
       
       // Displacement depends on height (vUv.y)
-      // We use a power function for a more "curved" bend
-      float displacement = pow(vUv.y, 2.0) * wave * 0.15;
+      float displacement = pow(vUv.y, 2.0) * windStrength * 0.18;
       
       vec3 pos = position;
       // Add a slight tilt even without wind
-      pos.x += sin(instancePos.x * 10.0) * 0.02 * vUv.y;
+      pos.x += sin(instancePos.x * 10.0 + instancePos.z * 5.0) * 0.02 * vUv.y;
       
-      // Apply wind displacement
-      pos.x += displacement;
-      pos.z += displacement * 0.5;
+      // Apply wind displacement in a semi-random direction influenced by noise
+      float angle = windNoise * 0.5; 
+      pos.x += displacement * cos(angle);
+      pos.z += displacement * sin(angle + 0.5);
 
       // Transform to world space
       vec4 worldPosition = instanceMatrix * vec4(pos, 1.0);
@@ -86,6 +114,7 @@ export function createGrassMaterial() {
   const fragmentShader = `
     varying vec2 vUv;
     varying vec3 vInstancePos;
+    varying float vFade;
     
     float rand(vec2 co){
       return fract(sin(dot(co.xy ,vec2(12.9898,78.233))) * 43758.5453);
@@ -111,7 +140,10 @@ export function createGrassMaterial() {
       float tipHighlight = smoothstep(0.7, 1.0, vUv.y) * 0.2;
       color += tipHighlight * vec3(0.8, 1.0, 0.5);
       
-      gl_FragColor = vec4(color * ao, 1.0);
+      gl_FragColor = vec4(color * ao, vFade);
+      
+      // Alpha test to prevent depth sorting issues with low alpha
+      if (gl_FragColor.a < 0.05) discard;
     }
   `;
 
@@ -122,5 +154,6 @@ export function createGrassMaterial() {
       uTime: { value: 0 },
     },
     side: THREE.DoubleSide,
+    transparent: true,
   });
 }

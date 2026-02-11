@@ -2,7 +2,8 @@ import { useMemo } from "react";
 import * as THREE from "three";
 import { TerrainSampler } from "../utils/terrainSampler";
 import { createClayMaterial } from "../materials/clayMaterial";
-import { worley2d } from "../utils/noise";
+import { worley2d, simplex2d } from "../utils/noise";
+import { Coordinate } from "../utils/Coordinate";
 
 interface TreesProps {
   terrainSampler: TerrainSampler;
@@ -48,8 +49,6 @@ export function Trees({ terrainSampler, count = 150 }: TreesProps) {
     const maxTreeHeight = minH + (maxH - minH) * 0.8;
 
     let placedCount = 0;
-    const rows = points.length;
-    const cols = points[0].length;
     const maxAttempts = count * 20;
 
     const centerX = 5;
@@ -57,22 +56,25 @@ export function Trees({ terrainSampler, count = 150 }: TreesProps) {
     const radius = 4.8;
 
     for (let i = 0; i < maxAttempts && placedCount < count; i++) {
-      const r = Math.floor(Math.random() * (rows - 1));
-      const c = Math.floor(Math.random() * (cols - 1));
-      const p = points[r][c];
+      // Pick a random point within the circle
+      const r_val = Math.sqrt(Math.random()) * radius;
+      const theta = Math.random() * 2 * Math.PI;
+      const x = centerX + r_val * Math.cos(theta);
+      const z = centerZ + r_val * Math.sin(theta);
 
-      const dist = Math.sqrt(Math.pow(p.threeX - centerX, 2) + Math.pow(p.threeZ - centerZ, 2));
-      if (dist > radius) continue;
+      const p = terrainSampler.getClosestMapPoint(Coordinate.fromGameCoords(x, z));
+      if (!p) continue;
 
       // Avoid placing trees on the trail if possible
       // (This is a bit hard without the trail texture here, but we can just use randomness)
       
       if (p.threeY >= minTreeHeight && p.threeY <= maxTreeHeight) {
         // Use Worley noise to create glades
-        const noiseVal = worley2d(p.threeX * 0.8, p.threeZ * 0.8);
+        const noiseVal = worley2d(x * 0.8, z * 0.8);
         if (noiseVal > 0.35) continue;
 
-        tempObject.position.set(p.threeX, p.threeY, p.threeZ);
+        const wobble = simplex2d(x * 1.5, z * 1.5) * 0.05;
+        tempObject.position.set(x, p.threeY + wobble, z);
         tempObject.rotation.y = Math.random() * Math.PI * 2;
         const scale = 0.25 + Math.random() * 0.35;
         tempObject.scale.set(scale, scale, scale);

@@ -226,7 +226,7 @@ export default function App() {
             trailTexture={trailTexture}
           />
         )}
-        {terrainSampler && <Grass terrainSampler={terrainSampler} count={500000} />}
+        {terrainSampler && <Grass terrainSampler={terrainSampler} count={800000} />}
         {terrainSampler && <Trees terrainSampler={terrainSampler} count={300} />}
         {terrainSampler && (
           <Pin

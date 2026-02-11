@@ -126,6 +126,8 @@ function addTerrainShader(mat: THREE.Material) {
   mat.userData.uHeightRange = { value: new THREE.Vector2(0, 1) };
   mat.userData.uTrailTexture = { value: null };
   mat.onBeforeCompile = (shader) => {
+    shader.vertexShader = "#define TERRAIN_SHADER\n" + shader.vertexShader;
+    shader.fragmentShader = "#define TERRAIN_SHADER\n" + shader.fragmentShader;
     shader.uniforms.uHeightRange = mat.userData.uHeightRange;
     shader.uniforms.uTrailTexture = mat.userData.uTrailTexture;
     shader.vertexShader = shader.vertexShader.replace(

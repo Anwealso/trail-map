@@ -1,4 +1,4 @@
-export const GAMEWORLD_RESOLUTION = 100; // the number of points in our mesh per gameworld 1 "metre" unit
+export const GAMEWORLD_RESOLUTION = 20; // the number of points in our mesh per gameworld 1 "metre" unit
 
 // TODO: This should be passed in as an arg later but for now lets hardcode a 10km x 10km size
 // for our starter heightmap.jpg map here

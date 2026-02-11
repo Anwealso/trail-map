@@ -56,3 +56,17 @@ export function simplex2d(x: number, y: number): number {
 
   return noise([x, y]);
 }
+
+export function fbm2d(x: number, y: number, octaves: number = 4): number {
+  let value = 0;
+  let amplitude = 0.5;
+  let frequency = 1.0;
+  for (let i = 0; i < octaves; i++) {
+    value += amplitude * simplex2d(x * frequency, y * frequency);
+    x += 100; // offset to avoid correlation between octaves
+    y += 100;
+    frequency *= 2.0;
+    amplitude *= 0.5;
+  }
+  return value;
+}

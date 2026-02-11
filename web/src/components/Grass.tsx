@@ -3,6 +3,8 @@ import * as THREE from "three";
 import { useFrame } from "@react-three/fiber";
 import { TerrainSampler } from "../utils/terrainSampler";
 import { createGrassMaterial } from "../materials/grassMaterial";
+import { Coordinate } from "../utils/Coordinate";
+import { simplex2d, fbm2d } from "../utils/noise";
 
 interface GrassProps {
   terrainSampler: TerrainSampler;
@@ -50,29 +52,36 @@ export function Grass({ terrainSampler, count = 500000 }: GrassProps) {
     const midHeight = minH + (maxH - minH) * 0.45; 
 
     let placedCount = 0;
-    const rows = points.length;
-    const cols = points[0].length;
-    const maxAttempts = count * 15; // Increased attempts for high density
+    const maxAttempts = count * 25; // Even higher attempts to satisfy noise masking
 
     const centerX = 5; 
     const centerZ = 5;
     const radius = 5;
 
     for (let i = 0; i < maxAttempts && placedCount < count; i++) {
-      const r = Math.floor(Math.random() * (rows - 1));
-      const c = Math.floor(Math.random() * (cols - 1));
-      const p = points[r][c];
+      // Pick a random point within the circle
+      const r_val = Math.sqrt(Math.random()) * radius;
+      const theta = Math.random() * 2 * Math.PI;
+      const x = centerX + r_val * Math.cos(theta);
+      const z = centerZ + r_val * Math.sin(theta);
 
-      const dist = Math.sqrt(Math.pow(p.threeX - centerX, 2) + Math.pow(p.threeZ - centerZ, 2));
-      if (dist > radius - 0.2) continue;
+      // Use FBM noise for realistic foliage patches
+      // We use a low frequency (0.4) for large-scale clumping
+      const noiseVal = fbm2d(x * 0.4, z * 0.4, 3);
+      // Normalize to 0-1 and apply a power function for sharper "peaks" of growth
+      const normalizedNoise = Math.max(0, noiseVal * 0.5 + 0.5);
+      const density = Math.pow(normalizedNoise, 2.5);
+      
+      if (Math.random() > density) continue;
+
+      const p = terrainSampler.getClosestMapPoint(Coordinate.fromGameCoords(x, z));
+      if (!p) continue;
 
       if (p.threeY < midHeight && p.threeY > minH + 0.1) {
-        const offsetX = (Math.random() - 0.5) * 0.06;
-        const offsetZ = (Math.random() - 0.5) * 0.06;
-        
-        tempObject.position.set(p.threeX + offsetX, p.threeY, p.threeZ + offsetZ);
+        const wobble = simplex2d(x * 1.5, z * 1.5) * 0.05;
+        tempObject.position.set(x, p.threeY + wobble, z);
         tempObject.rotation.y = Math.random() * Math.PI;
-        const scale = 0.7 + Math.random() * 0.6;
+        const scale = 0.6 + Math.random() * 0.5;
         tempObject.scale.set(scale, scale, scale);
         
         tempObject.updateMatrix();

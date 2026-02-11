@@ -6,7 +6,6 @@ interface ClayMaterialParams {
   metalness?: number;
   bumpScale?: number;
   side?: THREE.Side;
-  map?: THREE.Texture;
 }
 
 function createClayTexture(): {
@@ -85,7 +84,11 @@ function createClayTexture(): {
   };
 
   for (let i = 0; i < 20; i++) {
-    drawFingerprint(Math.random() * width, Math.random() * height, 10 + Math.random() * 20);
+    drawFingerprint(
+      Math.random() * width,
+      Math.random() * height,
+      10 + Math.random() * 20,
+    );
   }
 
   const mapTexture = new THREE.CanvasTexture(canvas);
@@ -144,7 +147,6 @@ export function createClayMaterial({
   metalness = 0.0,
   bumpScale = 0.08,
   side = THREE.FrontSide,
-  map,
 }: ClayMaterialParams = {}): THREE.MeshPhysicalMaterial {
   const textures = createClayTexture();
 
@@ -152,7 +154,7 @@ export function createClayMaterial({
     color,
     roughness,
     metalness,
-    map: map || textures.map,
+    map: textures.map,
     bumpMap: textures.bumpMap,
     bumpScale,
     roughnessMap: textures.roughnessMap,
@@ -164,15 +166,17 @@ export function createClayMaterial({
 
   // Add instance-based edge fade for foliage (trees)
   mat.onBeforeCompile = (shader) => {
-    shader.vertexShader = shader.vertexShader.replace(
-      "#include <common>",
-      `#include <common>
+    shader.vertexShader = shader.vertexShader
+      .replace(
+        "#include <common>",
+        `#include <common>
        #ifndef TERRAIN_SHADER
        varying float vFade;
-       #endif`
-    ).replace(
-      "#include <begin_vertex>",
-      `
+       #endif`,
+      )
+      .replace(
+        "#include <begin_vertex>",
+        `
       #include <begin_vertex>
       
       #ifndef TERRAIN_SHADER
@@ -196,24 +200,26 @@ export function createClayMaterial({
       vFade = 1.0;
       #endif
       #endif
-      `
-    );
+      `,
+      );
 
-    shader.fragmentShader = shader.fragmentShader.replace(
-      "#include <common>",
-      `#include <common>
+    shader.fragmentShader = shader.fragmentShader
+      .replace(
+        "#include <common>",
+        `#include <common>
        #ifndef TERRAIN_SHADER
        varying float vFade;
-       #endif`
-    ).replace(
-      "#include <opaque_fragment>",
-      `
+       #endif`,
+      )
+      .replace(
+        "#include <opaque_fragment>",
+        `
       #ifndef TERRAIN_SHADER
       diffuseColor.a *= vFade;
       #endif
       #include <opaque_fragment>
-      `
-    );
+      `,
+      );
   };
 
   return mat;

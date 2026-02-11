@@ -31,94 +31,104 @@ export function Pin({
   const sphereOffset = height / 2 + sphereRadius * Math.sin(coneAngle);
 
   const geometry = useMemo(() => {
-    const coneGeo = new THREE.ConeGeometry(radius, height, 16, 1, true);
-    coneGeo.rotateX(Math.PI);
+    try {
+      const coneGeo = new THREE.ConeGeometry(radius, height, 16, 1, true);
+      coneGeo.rotateX(Math.PI);
 
-    const sphereGeo = new THREE.SphereGeometry(
-      sphereRadius,
-      16,
-      16,
-      0,
-      2 * Math.PI,
-      0,
-      Math.PI / 2 + coneAngle,
-    );
-    sphereGeo.translate(0, sphereOffset, 0);
+      const sphereGeo = new THREE.SphereGeometry(
+        sphereRadius,
+        16,
+        16,
+        0,
+        2 * Math.PI,
+        0,
+        Math.PI / 2 + coneAngle,
+      );
+      sphereGeo.translate(0, sphereOffset, 0);
 
-    // Create white arrow on top
-    const arrowShape = new THREE.Shape();
-    const arrowSize = radius * 1.2;
-    const arrowHalfWidth = arrowSize * 0.4;
+      // Create white arrow on top
+      const arrowShape = new THREE.Shape();
+      const arrowSize = radius * 1.2;
+      const arrowHalfWidth = arrowSize * 0.4;
 
-    // Triangle pointing up (in local Y)
-    arrowShape.moveTo(0, arrowSize); // Tip
-    arrowShape.lineTo(-arrowHalfWidth, 0); // Bottom left
-    arrowShape.lineTo(arrowHalfWidth, 0); // Bottom right
-    arrowShape.lineTo(0, arrowSize); // Back to tip
+      // Triangle pointing up (in local Y)
+      arrowShape.moveTo(0, arrowSize); // Tip
+      arrowShape.lineTo(-arrowHalfWidth, 0); // Bottom left
+      arrowShape.lineTo(arrowHalfWidth, 0); // Bottom right
+      arrowShape.lineTo(0, arrowSize); // Back to tip
 
-    const arrowGeo = new THREE.ExtrudeGeometry(arrowShape, {
-      depth: radius * 0.15,
-      bevelEnabled: false,
-    });
-    arrowGeo.rotateX(-Math.PI / 2); // Lay flat
-    arrowGeo.rotateY(Math.PI); // Point in -Z direction initially
-    arrowGeo.translate(0, sphereOffset + sphereRadius * 0.3, 0); // Position on top of sphere
+      const arrowGeo = new THREE.ExtrudeGeometry(arrowShape, {
+        depth: radius * 0.15,
+        bevelEnabled: false,
+      });
+      arrowGeo.rotateX(-Math.PI / 2); // Lay flat
+      arrowGeo.rotateY(Math.PI); // Point in -Z direction initially
+      arrowGeo.translate(0, sphereOffset + sphereRadius * 0.3, 0); // Position on top of sphere
 
-    // Count vertices for each geometry BEFORE merging
-    const coneCount = coneGeo.attributes.position.count;
-    const sphereCount = sphereGeo.attributes.position.count;
+      let merged = BufferGeometryUtils.mergeGeometries([coneGeo, sphereGeo, arrowGeo]);
+      merged = BufferGeometryUtils.mergeVertices(merged);
+      merged.computeVertexNormals();
 
-    let merged = BufferGeometryUtils.mergeGeometries([coneGeo, sphereGeo, arrowGeo]);
-    merged = BufferGeometryUtils.mergeVertices(merged);
-    merged.computeVertexNormals();
+      // Create color attribute
+      const count = merged.attributes.position.count;
+      const colors = new Float32Array(count * 3);
+      const colorObj = new THREE.Color(color);
+      const whiteColor = new THREE.Color("#ffffff");
 
-    // Create color attribute
-    const count = merged.attributes.position.count;
-    const colors = new Float32Array(count * 3);
-    const colorObj = new THREE.Color(color);
-    const whiteColor = new THREE.Color("#ffffff");
+      // After mergeVertices, the vertex count changes, so we need to estimate
+      // The arrow vertices are at the end before mergeVertices
+      // After mergeVertices, vertices are deduplicated
+      // We'll use a heuristic: arrow vertices have higher Y values
+      const positions = merged.attributes.position.array as Float32Array;
+      const arrowYThreshold = sphereOffset + sphereRadius * 0.2;
 
-    // After mergeVertices, the vertex count changes, so we need to estimate
-    // The arrow vertices are at the end before mergeVertices
-    // After mergeVertices, vertices are deduplicated
-    // We'll use a heuristic: arrow vertices have higher Y values
-    const positions = merged.attributes.position.array as Float32Array;
-    const arrowYThreshold = sphereOffset + sphereRadius * 0.2;
-
-    for (let i = 0; i < count; i++) {
-      const y = positions[i * 3 + 1]; // Y coordinate
-      if (y > arrowYThreshold) {
-        // Likely arrow - use white
-        colors[i * 3] = whiteColor.r;
-        colors[i * 3 + 1] = whiteColor.g;
-        colors[i * 3 + 2] = whiteColor.b;
-      } else {
-        // Pin body - use specified color
-        colors[i * 3] = colorObj.r;
-        colors[i * 3 + 1] = colorObj.g;
-        colors[i * 3 + 2] = colorObj.b;
+      for (let i = 0; i < count; i++) {
+        const y = positions[i * 3 + 1]; // Y coordinate
+        if (y > arrowYThreshold) {
+          // Likely arrow - use white
+          colors[i * 3] = whiteColor.r;
+          colors[i * 3 + 1] = whiteColor.g;
+          colors[i * 3 + 2] = whiteColor.b;
+        } else {
+          // Pin body - use specified color
+          colors[i * 3] = colorObj.r;
+          colors[i * 3 + 1] = colorObj.g;
+          colors[i * 3 + 2] = colorObj.b;
+        }
       }
+
+      // Set color attribute - use 'color' as the attribute name for vertex colors
+      merged.setAttribute("color", new THREE.BufferAttribute(colors, 3));
+
+      return merged;
+    } catch (error) {
+      console.error("Error creating pin geometry:", error);
+      // Return simple fallback geometry
+      const fallback = new THREE.ConeGeometry(radius, height, 16);
+      fallback.rotateX(Math.PI);
+      return fallback;
     }
-
-    merged.setAttribute("color", new THREE.BufferAttribute(colors, 3));
-
-    return merged;
   }, [radius, height, sphereRadius, sphereOffset, coneAngle, color]);
 
   useEffect(() => {
-    // Create a coordinate from game coordinates and sample the height
-    const coordinate = Coordinate.fromWorldCoords(x, y);
+    try {
+      // Create a coordinate from game coordinates and sample the height
+      const coordinate = Coordinate.fromWorldCoords(x, y);
 
-    // Create a Point with the sampled height (Point z is vertical height)
-    const point: Point | null = terrainSampler.getClosestMapPoint(coordinate);
-    if (!point) {
-      throw new Error(
-        "Invalid pin position: requested pin location is off the map.",
+      // Create a Point with the sampled height (Point z is vertical height)
+      const point: Point | null = terrainSampler.getClosestMapPoint(coordinate);
+      if (!point) {
+        console.error(
+          "Invalid pin position: requested pin location is off the map.",
+        );
+        return;
+      }
+      setPosition(
+        new THREE.Vector3(point.threeX, point.threeY + height / 2, point.threeZ),
       );
+    } catch (error) {
+      console.error("Error setting pin position:", error);
     }
-    setPosition(
-      new THREE.Vector3(point.threeX, point.threeY + height / 2, point.threeZ),
-    );
   }, [x, y, terrainSampler, radius, height]);
 
   // Calculate rotation based on heading (degrees to radians)

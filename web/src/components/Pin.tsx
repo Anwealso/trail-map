@@ -30,14 +30,41 @@ export function Pin({
   const sphereRadius = radius / Math.cos(coneAngle);
   const sphereOffset = height / 2 + sphereRadius * Math.sin(coneAngle);
 
-  // Create the pin geometry (cone + sphere as before)
+  // Create arrow texture
+  const arrowTexture = useMemo(() => {
+    const canvas = document.createElement("canvas");
+    canvas.width = 512;
+    canvas.height = 256;
+    const ctx = canvas.getContext("2d")!;
+
+    // Fill with base color
+    ctx.fillStyle = color;
+    ctx.fillRect(0, 0, 512, 256);
+
+    // Draw white arrow at the top center
+    // The top of the texture maps to the top of the sphere
+    ctx.fillStyle = "#ffffff";
+    ctx.beginPath();
+    // Arrow pointing up in texture (which is toward -Z in 3D)
+    ctx.moveTo(256, 30); // Tip at top center
+    ctx.lineTo(206, 120); // Bottom left
+    ctx.lineTo(306, 120); // Bottom right
+    ctx.closePath();
+    ctx.fill();
+
+    const texture = new THREE.CanvasTexture(canvas);
+    texture.needsUpdate = true;
+    return texture;
+  }, [color]);
+
+  // Create the pin geometry with proper UVs for the sphere
   const geometry = useMemo(() => {
-    const coneGeo = new THREE.ConeGeometry(radius, height, 16, 1, true);
+    const coneGeo = new THREE.ConeGeometry(radius, height, 32, 1, true);
     coneGeo.rotateX(Math.PI);
 
     const sphereGeo = new THREE.SphereGeometry(
       sphereRadius,
-      16,
+      32,
       16,
       0,
       2 * Math.PI,
@@ -45,6 +72,12 @@ export function Pin({
       Math.PI / 2 + coneAngle,
     );
     sphereGeo.translate(0, sphereOffset, 0);
+
+    // The sphere UVs are set up so:
+    // - u goes 0->1 around the equator (azimuthal)
+    // - v goes 0->1 from bottom to top (polar)
+    // We want the arrow at v=1 (top) and centered at u=0.5
+    // The arrow texture is at the top of the canvas, so it maps to v near 1
 
     let merged = BufferGeometryUtils.mergeGeometries([coneGeo, sphereGeo]);
     merged = BufferGeometryUtils.mergeVertices(merged);
@@ -54,15 +87,10 @@ export function Pin({
 
   useEffect(() => {
     try {
-      // Create a coordinate from game coordinates and sample the height
       const coordinate = Coordinate.fromWorldCoords(x, y);
-
-      // Create a Point with the sampled height (Point z is vertical height)
       const point: Point | null = terrainSampler.getClosestMapPoint(coordinate);
       if (!point) {
-        console.error(
-          "Invalid pin position: requested pin location is off the map.",
-        );
+        console.error("Invalid pin position: requested pin location is off the map.");
         return;
       }
       setPosition(
@@ -73,61 +101,12 @@ export function Pin({
     }
   }, [x, y, terrainSampler, radius, height]);
 
-  // Calculate rotation based on heading (degrees to radians)
-  // heading 0 = North, rotate around Y axis
-  // In Three.js, rotation is counter-clockwise, so we negate heading
+  // Calculate rotation based on heading
   const rotationY = THREE.MathUtils.degToRad(-heading);
 
-  // Create arrow texture on canvas
-  const arrowTexture = useMemo(() => {
-    const canvas = document.createElement("canvas");
-    canvas.width = 128;
-    canvas.height = 128;
-    const ctx = canvas.getContext("2d")!;
-
-    // Clear background
-    ctx.fillStyle = "rgba(255, 255, 255, 0)";
-    ctx.fillRect(0, 0, 128, 128);
-
-    // Draw white triangle arrow pointing up
-    ctx.fillStyle = "#ffffff";
-    ctx.beginPath();
-    ctx.moveTo(64, 20); // Tip (top center)
-    ctx.lineTo(24, 108); // Bottom left
-    ctx.lineTo(104, 108); // Bottom right
-    ctx.closePath();
-    ctx.fill();
-
-    // Create texture
-    const texture = new THREE.CanvasTexture(canvas);
-    texture.needsUpdate = true;
-    return texture;
-  }, []);
-
-  // Arrow plane geometry - positioned on top of the pin
-  const arrowGeometry = useMemo(() => {
-    const arrowSize = radius * 1.5;
-    const arrowY = sphereOffset + sphereRadius * 0.15;
-    
-    const planeGeo = new THREE.PlaneGeometry(arrowSize, arrowSize);
-    planeGeo.rotateX(-Math.PI / 2); // Lay flat
-    planeGeo.translate(0, arrowY, 0); // Position on top of sphere
-    
-    return planeGeo;
-  }, [radius, sphereRadius, sphereOffset]);
-
-  const pinMaterial = useMemo(() => {
-    return new THREE.MeshStandardMaterial({
-      color: color,
-      roughness: 0.4,
-      metalness: 0.1,
-    });
-  }, [color]);
-
-  const arrowMaterial = useMemo(() => {
+  const material = useMemo(() => {
     return new THREE.MeshStandardMaterial({
       map: arrowTexture,
-      transparent: true,
       roughness: 0.4,
       metalness: 0.1,
     });
@@ -136,9 +115,11 @@ export function Pin({
   if (!position) return null;
 
   return (
-    <group position={position} rotation={[0, rotationY, 0]}>
-      <mesh geometry={geometry} material={pinMaterial} />
-      <mesh geometry={arrowGeometry} material={arrowMaterial} />
-    </group>
+    <mesh
+      position={position}
+      geometry={geometry}
+      material={material}
+      rotation={[0, rotationY, 0]}
+    />
   );
 }

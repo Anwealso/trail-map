@@ -15,15 +15,15 @@ export function Grass({ terrainSampler, count = 500000 }: GrassProps) {
   const meshRef = useRef<THREE.InstancedMesh>(null);
   const material = useMemo(() => createGrassMaterial(), []);
 
-  // Create a tapered blade geometry
+  // Create a tufted grass geometry (2 crossed blades)
   const geometry = useMemo(() => {
-    const height = 0.04; // 1/2 as long again (was 0.08)
-    const width = 0.004; // slightly thinner
-    const geo = new THREE.PlaneGeometry(width, height, 1, 4);
-    geo.translate(0, height / 2, 0); // Move origin to bottom
+    const height = 0.04;
+    const width = 0.006;
+    const bladeGeo = new THREE.PlaneGeometry(width, height, 1, 4);
+    bladeGeo.translate(0, height / 2, 0);
     
     // Taper the top vertices
-    const pos = geo.attributes.position;
+    const pos = bladeGeo.attributes.position;
     for (let i = 0; i < pos.count; i++) {
       const y = pos.getY(i);
       if (y > height * 0.4) {
@@ -32,7 +32,44 @@ export function Grass({ terrainSampler, count = 500000 }: GrassProps) {
         pos.setX(i, pos.getX(i) * widthScale);
       }
     }
-    return geo;
+
+    const tuftGeo = new THREE.BufferGeometry();
+    const blade1 = bladeGeo.clone();
+    const blade2 = bladeGeo.clone();
+    blade2.rotateY(Math.PI / 2);
+    
+    const pos1 = blade1.attributes.position.array as Float32Array;
+    const pos2 = blade2.attributes.position.array as Float32Array;
+    const mergedPos = new Float32Array(pos1.length + pos2.length);
+    mergedPos.set(pos1);
+    mergedPos.set(pos2, pos1.length);
+    tuftGeo.setAttribute('position', new THREE.BufferAttribute(mergedPos, 3));
+
+    const uv1 = blade1.attributes.uv.array as Float32Array;
+    const uv2 = blade2.attributes.uv.array as Float32Array;
+    const mergedUv = new Float32Array(uv1.length + uv2.length);
+    mergedUv.set(uv1);
+    mergedUv.set(uv2, uv1.length);
+    tuftGeo.setAttribute('uv', new THREE.BufferAttribute(mergedUv, 2));
+
+    const normal1 = blade1.attributes.normal.array as Float32Array;
+    const normal2 = blade2.attributes.normal.array as Float32Array;
+    const mergedNormal = new Float32Array(normal1.length + normal2.length);
+    mergedNormal.set(normal1);
+    mergedNormal.set(normal2, normal1.length);
+    tuftGeo.setAttribute('normal', new THREE.BufferAttribute(mergedNormal, 3));
+    
+    const index1 = blade1.index!.array as Uint16Array;
+    const index2 = blade2.index!.array as Uint16Array;
+    const mergedIndex = new Uint16Array(index1.length + index2.length);
+    mergedIndex.set(index1);
+    const offset = blade1.attributes.position.count;
+    for (let i = 0; i < index2.length; i++) {
+      mergedIndex[index1.length + i] = index2[i] + offset;
+    }
+    tuftGeo.setIndex(new THREE.BufferAttribute(mergedIndex, 1));
+    
+    return tuftGeo;
   }, []);
 
   const { matrices, actualCount } = useMemo(() => {
@@ -44,8 +81,8 @@ export function Grass({ terrainSampler, count = 500000 }: GrassProps) {
     const points = terrainSampler.mapPoints;
     for (const row of points) {
       for (const p of row) {
-        if (p.threeY < minH) minH = p.threeY;
-        if (p.threeY > maxH) maxH = p.threeY;
+        if (p.gameZ < minH) minH = p.gameZ;
+        if (p.gameZ > maxH) maxH = p.gameZ;
       }
     }
 
@@ -66,20 +103,22 @@ export function Grass({ terrainSampler, count = 500000 }: GrassProps) {
       const z = centerZ + r_val * Math.sin(theta);
 
       // Use FBM noise for realistic foliage patches
-      // We use a low frequency (0.4) for large-scale clumping
-      const noiseVal = fbm2d(x * 0.4, z * 0.4, 3);
+      // Higher frequency (1.27) for more numerous "nodes"
+      const noiseVal = fbm2d(x * 1.273, z * 1.273, 3);
       // Normalize to 0-1 and apply a power function for sharper "peaks" of growth
       const normalizedNoise = Math.max(0, noiseVal * 0.5 + 0.5);
-      const density = Math.pow(normalizedNoise, 2.5);
+      // Lower power (1.2) means the patches are less "dense" at their core
+      const density = Math.pow(normalizedNoise, 1.2);
       
       if (Math.random() > density) continue;
 
-      const p = terrainSampler.getClosestMapPoint(Coordinate.fromGameCoords(x, z));
-      if (!p) continue;
-
-      if (p.threeY < midHeight && p.threeY > minH + 0.1) {
-        const wobble = simplex2d(x * 1.5, z * 1.5) * 0.05;
-        tempObject.position.set(x, p.threeY + wobble, z);
+      const coord = Coordinate.fromGameCoords(x, z);
+      const h = terrainSampler.getHeightAt(coord);
+      
+      // Basic bounds check (using height range of map)
+      if (h < midHeight && h > minH + 0.1) {
+        const wobble = simplex2d(x * 1.492, z * 1.492) * 0.05;
+        tempObject.position.set(x, h + wobble, z);
         tempObject.rotation.y = Math.random() * Math.PI;
         const scale = 0.6 + Math.random() * 0.5;
         tempObject.scale.set(scale, scale, scale);

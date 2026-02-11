@@ -40,8 +40,8 @@ export function Trees({ terrainSampler, count = 150 }: TreesProps) {
     const points = terrainSampler.mapPoints;
     for (const row of points) {
       for (const p of row) {
-        if (p.threeY < minH) minH = p.threeY;
-        if (p.threeY > maxH) maxH = p.threeY;
+        if (p.gameZ < minH) minH = p.gameZ;
+        if (p.gameZ > maxH) maxH = p.gameZ;
       }
     }
 
@@ -62,19 +62,19 @@ export function Trees({ terrainSampler, count = 150 }: TreesProps) {
       const x = centerX + r_val * Math.cos(theta);
       const z = centerZ + r_val * Math.sin(theta);
 
-      const p = terrainSampler.getClosestMapPoint(Coordinate.fromGameCoords(x, z));
-      if (!p) continue;
+      const coord = Coordinate.fromGameCoords(x, z);
+      const h = terrainSampler.getHeightAt(coord);
 
       // Avoid placing trees on the trail if possible
       // (This is a bit hard without the trail texture here, but we can just use randomness)
       
-      if (p.threeY >= minTreeHeight && p.threeY <= maxTreeHeight) {
+      if (h >= minTreeHeight && h <= maxTreeHeight) {
         // Use Worley noise to create glades
-        const noiseVal = worley2d(x * 0.8, z * 0.8);
+        const noiseVal = worley2d(x * 0.821, z * 0.821);
         if (noiseVal > 0.35) continue;
 
-        const wobble = simplex2d(x * 1.5, z * 1.5) * 0.05;
-        tempObject.position.set(x, p.threeY + wobble, z);
+        const wobble = simplex2d(x * 1.492, z * 1.492) * 0.05;
+        tempObject.position.set(x, h + wobble, z);
         tempObject.rotation.y = Math.random() * Math.PI * 2;
         const scale = 0.25 + Math.random() * 0.35;
         tempObject.scale.set(scale, scale, scale);

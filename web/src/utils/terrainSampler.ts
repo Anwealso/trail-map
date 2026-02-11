@@ -17,6 +17,12 @@ export interface TerrainSampler {
   getClosestMapPoint: (coordinate: Coordinate) => Point | null;
 
   /**
+   * Returns the interpolated height at a specific coordinate.
+   * Uses bilinear interpolation between grid vertices for smooth results.
+   */
+  getHeightAt: (coordinate: Coordinate) => number;
+
+  /**
    * The matrix of map points to sample from.
    */
   mapPoints: Point[][];
@@ -61,9 +67,50 @@ export function createTerrainHeightSamplerFromPointMatrix(
     return mapPoints[row][col];
   }
 
+  function getHeightAt(coordinate: Coordinate): number {
+    const numRows = mapPoints.length;
+    const numCols = mapPoints[0]?.length ?? 0;
+    
+    // Normalized world coordinates [0, 1]
+    const u = coordinate.worldX / TOPOMAP_WORLD_SIZE_X;
+    const v = coordinate.worldY / TOPOMAP_WORLD_SIZE_Y;
+    
+    if (u < 0 || u > 1 || v < 0 || v > 1) return 0;
+
+    // Grid coordinates
+    const x = u * (numCols - 1);
+    const y = v * (numRows - 1);
+    
+    const x0 = Math.floor(x);
+    const y0 = Math.floor(y);
+    const x1 = Math.min(x0 + 1, numCols - 1);
+    const y1 = Math.min(y0 + 1, numRows - 1);
+    
+    const tx = x - x0;
+    const ty = y - y0;
+    
+    // Smooth fade
+    const fade = (t: number) => t * t * (3 - 2 * t);
+    const sx = fade(tx);
+    const sy = fade(ty);
+
+    const h00 = mapPoints[y0][x0].gameZ;
+    const h10 = mapPoints[y0][x1].gameZ;
+    const h01 = mapPoints[y1][x0].gameZ;
+    const h11 = mapPoints[y1][x1].gameZ;
+    
+    const h0 = h00 + sx * (h10 - h00);
+    const h1 = h01 + sx * (h11 - h01);
+    
+    return h0 + sy * (h1 - h0);
+  }
+
   return {
     getClosestMapPoint(coordinate: Coordinate): Point | null {
       return getClosestMapPoint(coordinate);
+    },
+    getHeightAt(coordinate: Coordinate): number {
+      return getHeightAt(coordinate);
     },
     mapPoints: mapPoints,
   };

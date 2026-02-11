@@ -167,7 +167,6 @@ export default function App() {
                 padding: "10px",
                 borderRadius: "5px",
                 fontSize: "12px",
-                marginRight: "10px",
                 alignSelf: "flex-start",
               }}
             >
@@ -175,7 +174,7 @@ export default function App() {
               connections.
             </div>
           ) : gpsError ? (
-            <div style={{ display: "flex", flexDirection: "column", marginRight: "10px", alignSelf: "flex-start" }}>
+            <div style={{ display: "flex", flexDirection: "column", alignSelf: "flex-start" }}>
               <span style={{ color: "#ff4444" }}>Error: {gpsError}</span>
               <button
                 onClick={startGpsWatch}

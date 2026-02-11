@@ -247,6 +247,7 @@ export default function App() {
           <NorthArrow
             terrainSampler={terrainSampler}
             size={0.4}
+            widthMultiplier={3}
           />
         )}
         {terrainSampler && (

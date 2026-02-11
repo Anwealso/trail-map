@@ -7,14 +7,17 @@ interface NorthArrowProps {
   terrainSampler: TerrainSampler;
   /** Position in world coordinates (default: top-right corner) */
   position?: { x: number; y: number };
-  /** Size of the arrow in game units (default: 0.3) */
+  /** Size (length) of the arrow in game units (default: 0.3) */
   size?: number;
+  /** Width multiplier for the arrow base (default: 1) */
+  widthMultiplier?: number;
 }
 
 export function NorthArrow({
   terrainSampler,
   position,
   size = 0.3,
+  widthMultiplier = 1,
 }: NorthArrowProps) {
   // Default position: centered at bottom edge of map (minimum world Y = 0)
   const arrowPosition = useMemo(() => {
@@ -36,8 +39,8 @@ export function NorthArrow({
     const shape = new THREE.Shape();
     
     // Pure triangle: base at bottom, tip at top
-    const halfWidth = size * 0.5; // Half width of triangle base
-    const height = size; // Triangle height
+    const halfWidth = size * 0.5 * widthMultiplier; // Half width of triangle base (scaled by widthMultiplier)
+    const height = size; // Triangle height (unchanged)
     
     // Triangle pointing up in 2D shape coords
     shape.moveTo(0, height); // Tip at top

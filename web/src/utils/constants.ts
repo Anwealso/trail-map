@@ -31,3 +31,5 @@ export const GAME_TO_WORLD_HEIGHT_SCALE_RATIO =
 export const GAUSSIAN_ENABLED = true;
 export const GAUSSIAN_KERNEL_SIZE = 5;
 export const GAUSSIAN_SIGMA = 1.5;
+
+export const MAP_AUTO_ROTATE_ENABLED = false;

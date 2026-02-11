@@ -234,6 +234,7 @@ export default function App() {
       </div>
       <Canvas shadows camera={{ position: [8, 4, 8], fov: 50 }}>
         <Lighting />
+        <axesHelper args={[5]} />
 
         {terrainSampler && (
           <Terrain 

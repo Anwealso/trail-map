@@ -20,7 +20,24 @@ import {
   TOPOMAP_GAME_SIZE_LIMIT_Y,
   MAP_AUTO_ROTATE_ENABLED,
 } from "./utils/constants";
+import { TopologySelector, TopologyOption } from "./components/TopologySelector";
 import "./App.css";
+
+// Available topology files
+const TOPOLOGY_OPTIONS: TopologyOption[] = [
+  {
+    id: 'default',
+    name: 'Default Terrain',
+    file: 'heightmap.jpg',
+    description: 'Original test terrain',
+  },
+  {
+    id: 'tibrogargan',
+    name: 'Mount Tibrogargan',
+    file: 'mount_tibrogargan_heightmap.png',
+    description: 'Glass House Mountains, Queensland, Australia (SRTM 30m)',
+  },
+];
 
 export default function App() {
   const [terrainSampler, setterrainSampler] = useState<TerrainSampler | null>(
@@ -29,6 +46,8 @@ export default function App() {
   const [autoRotate, setAutoRotate] = useState(MAP_AUTO_ROTATE_ENABLED);
   const autoRotateTimer = useRef<number | null>(null);
   const [loaded, setLoaded] = useState(false);
+  const [selectedTopology, setSelectedTopology] = useState<string>(TOPOLOGY_OPTIONS[0].id);
+  const [isTopologyLoading, setIsTopologyLoading] = useState(false);
   const [gpsPosition, setGpsPosition] = useState<GPSPosition | null>(null);
   const [gpsError, setGpsError] = useState<string | null>(null);
   const [isSecure, setIsSecure] = useState(true);
@@ -114,12 +133,28 @@ export default function App() {
 
   useEffect(() => {
     setIsSecure(window.isSecureContext);
+  }, []);
 
+  // Load terrain when selected topology changes
+  useEffect(() => {
+    setIsTopologyLoading(true);
+    setLoaded(false);
+    
+    const selectedOption = TOPOLOGY_OPTIONS.find(opt => opt.id === selectedTopology);
+    const topologyFile = selectedOption?.file || TOPOLOGY_OPTIONS[0].file;
+    
     const base = import.meta.env.BASE_URL;
-    getFinalMapMeshPointMatrix(`${base}heightmap.jpg`).then((points) => {
+    getFinalMapMeshPointMatrix(`${base}${topologyFile}`).then((points) => {
       setterrainSampler(createTerrainHeightSamplerFromPointMatrix(points));
+      setIsTopologyLoading(false);
+    }).catch((error) => {
+      console.error("Failed to load topology:", error);
+      setIsTopologyLoading(false);
     });
+  }, [selectedTopology]);
 
+  // GPS and orientation setup
+  useEffect(() => {
     if (!window.isSecureContext) {
       setGpsError("Insecure Context (Requires HTTPS)");
       return;
@@ -274,6 +309,12 @@ export default function App() {
           )}
         </div>
       </div>
+      <TopologySelector
+        options={TOPOLOGY_OPTIONS}
+        selectedId={selectedTopology}
+        onSelect={setSelectedTopology}
+        disabled={isTopologyLoading}
+      />
       <div
         style={{
           position: "fixed",

@@ -51,7 +51,7 @@ export function Trees({ terrainSampler, count = 150 }: TreesProps) {
     }
 
     const minTreeHeight = minH + (maxH - minH) * 0.2;
-    const maxTreeHeight = minH + (maxH - minH) * 0.8;
+    const maxTreeHeight = minH + (maxH - minH) * 0.65; // Keep trees below snow line (starts at 0.7)
 
     let placedCount = 0;
     const maxAttempts = count * 20;

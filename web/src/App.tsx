@@ -345,8 +345,8 @@ export default function App() {
             trailTexture={trailTexture}
           />
         )}
-        {terrainSampler && trailSampler && <Grass terrainSampler={terrainSampler} count={400000} trailSampler={trailSampler} />}
-        {terrainSampler && <Trees terrainSampler={terrainSampler} count={300} />}
+        {terrainSampler && trailSampler && <Grass key={`grass-${selectedTopology}`} terrainSampler={terrainSampler} count={400000} trailSampler={trailSampler} />}
+        {terrainSampler && <Trees key={`trees-${selectedTopology}`} terrainSampler={terrainSampler} count={300} />}
         {terrainSampler && (
           <NorthArrow
             terrainSampler={terrainSampler}

@@ -1,4 +1,4 @@
-import { useMemo } from "react";
+import { useMemo, useRef, useEffect } from "react";
 import * as THREE from "three";
 import { TerrainSampler } from "../utils/terrainSampler";
 import { createClayMaterial } from "../materials/clayMaterial";
@@ -11,6 +11,11 @@ interface TreesProps {
 }
 
 export function Trees({ terrainSampler, count = 150 }: TreesProps) {
+  const trunkMeshRef = useRef<THREE.InstancedMesh>(null);
+  const foliage1MeshRef = useRef<THREE.InstancedMesh>(null);
+  const foliage2MeshRef = useRef<THREE.InstancedMesh>(null);
+  const foliage3MeshRef = useRef<THREE.InstancedMesh>(null);
+  
   const foliageMat = useMemo(() => createClayMaterial({ color: "#3a5f25", roughness: 0.95, bumpScale: 0.04 }), []);
   const trunkMat = useMemo(() => createClayMaterial({ color: "#5d4037", roughness: 1.0, bumpScale: 0.03 }), []);
 
@@ -88,24 +93,28 @@ export function Trees({ terrainSampler, count = 150 }: TreesProps) {
     return { matrices: tempMatrices.slice(0, placedCount * 16), actualCount: placedCount };
   }, [terrainSampler, count]);
 
+  // Update instance matrices whenever they change (including on terrain change)
+  useEffect(() => {
+    const updateMesh = (mesh: THREE.InstancedMesh | null) => {
+      if (mesh) {
+        mesh.instanceMatrix.set(matrices);
+        mesh.instanceMatrix.needsUpdate = true;
+        mesh.count = actualCount;
+      }
+    };
+    
+    updateMesh(trunkMeshRef.current);
+    updateMesh(foliage1MeshRef.current);
+    updateMesh(foliage2MeshRef.current);
+    updateMesh(foliage3MeshRef.current);
+  }, [matrices, actualCount]);
+
   return (
     <group>
-      <instancedMesh args={[trunkGeo, trunkMat, actualCount]} frustumCulled={false} onUpdate={(self) => {
-        self.instanceMatrix.set(matrices);
-        self.instanceMatrix.needsUpdate = true;
-      }} />
-      <instancedMesh args={[foliage1Geo, foliageMat, actualCount]} frustumCulled={false} onUpdate={(self) => {
-        self.instanceMatrix.set(matrices);
-        self.instanceMatrix.needsUpdate = true;
-      }} />
-      <instancedMesh args={[foliage2Geo, foliageMat, actualCount]} frustumCulled={false} onUpdate={(self) => {
-        self.instanceMatrix.set(matrices);
-        self.instanceMatrix.needsUpdate = true;
-      }} />
-      <instancedMesh args={[foliage3Geo, foliageMat, actualCount]} frustumCulled={false} onUpdate={(self) => {
-        self.instanceMatrix.set(matrices);
-        self.instanceMatrix.needsUpdate = true;
-      }} />
+      <instancedMesh ref={trunkMeshRef} args={[trunkGeo, trunkMat, count]} frustumCulled={false} />
+      <instancedMesh ref={foliage1MeshRef} args={[foliage1Geo, foliageMat, count]} frustumCulled={false} />
+      <instancedMesh ref={foliage2MeshRef} args={[foliage2Geo, foliageMat, count]} frustumCulled={false} />
+      <instancedMesh ref={foliage3MeshRef} args={[foliage3Geo, foliageMat, count]} frustumCulled={false} />
     </group>
   );
 }

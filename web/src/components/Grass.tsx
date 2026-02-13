@@ -1,4 +1,4 @@
-import { useRef, useMemo } from "react";
+import { useRef, useMemo, useEffect } from "react";
 import * as THREE from "three";
 import { useFrame } from "@react-three/fiber";
 import { TerrainSampler } from "../utils/terrainSampler";
@@ -16,6 +16,10 @@ interface GrassProps {
 export function Grass({ terrainSampler, count = 500000, trailSampler = null }: GrassProps) {
   const meshRef = useRef<THREE.InstancedMesh>(null);
   const material = useMemo(() => createGrassMaterial(), []);
+  
+  // Use a ref to track the terrain sampler for comparison
+  const terrainSamplerRef = useRef(terrainSampler);
+  terrainSamplerRef.current = terrainSampler;
 
   // Create a tufted grass geometry (2 crossed blades)
   const geometry = useMemo(() => {
@@ -160,6 +164,16 @@ export function Grass({ terrainSampler, count = 500000, trailSampler = null }: G
     };
   }, [terrainSampler, count, trailSampler]);
 
+  // Update instance matrices whenever they change (including on terrain change)
+  useEffect(() => {
+    if (meshRef.current) {
+      meshRef.current.instanceMatrix.set(matrices);
+      meshRef.current.instanceMatrix.needsUpdate = true;
+      // Force a re-render
+      meshRef.current.count = actualCount;
+    }
+  }, [matrices, actualCount]);
+
   useFrame((state) => {
     const uTime = (material as any).userData?.uTime;
     if (uTime) {
@@ -170,12 +184,8 @@ export function Grass({ terrainSampler, count = 500000, trailSampler = null }: G
   return (
     <instancedMesh
       ref={meshRef}
-      args={[geometry, material, actualCount]}
+      args={[geometry, material, count]}
       frustumCulled={false}
-      onUpdate={(self) => {
-        self.instanceMatrix.set(matrices);
-        self.instanceMatrix.needsUpdate = true;
-      }}
     />
   );
 }

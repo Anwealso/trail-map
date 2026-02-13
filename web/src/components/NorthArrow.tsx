@@ -19,20 +19,31 @@ export function NorthArrow({
   size = 0.3,
   widthMultiplier = 1,
 }: NorthArrowProps) {
-  // Default position: centered at bottom edge of map (minimum world Y = 0)
+  // Calculate the minimum height of the terrain
+  const minTerrainHeight = useMemo(() => {
+    let minH = Infinity;
+    for (const row of terrainSampler.mapPoints) {
+      for (const p of row) {
+        if (p.threeY < minH) minH = p.threeY;
+      }
+    }
+    return minH === Infinity ? 0 : minH;
+  }, [terrainSampler]);
+
+  // Default position: centered at bottom edge of map
   const arrowPosition = useMemo(() => {
     const pos = position || { x: 5, y: 0 }; // Center horizontally at bottom edge
     const coordinate = Coordinate.fromWorldCoords(pos.x, pos.y);
     const point = terrainSampler.getClosestMapPoint(coordinate);
 
     if (!point) {
-      // Fallback to bottom edge
-      return new THREE.Vector3(5, size * 0.5, 0);
+      // Fallback to bottom edge at minimum terrain height
+      return new THREE.Vector3(5, minTerrainHeight + size * 0.5, 0);
     }
 
-    // Position flush with terrain surface (no elevation offset)
-    return new THREE.Vector3(point.threeX, point.threeY, point.threeZ);
-  }, [position, terrainSampler, size]);
+    // Position at the minimum terrain height (true bottom of the map)
+    return new THREE.Vector3(point.threeX, minTerrainHeight + size * 0.5, point.threeZ);
+  }, [position, terrainSampler, size, minTerrainHeight]);
 
   // Arrow geometry - pure triangle pointing in negative Z direction (world north)
   const arrowGeometry = useMemo(() => {
@@ -63,7 +74,7 @@ export function NorthArrow({
     geometry.rotateX(-Math.PI / 2);
     
     return geometry;
-  }, [size]);
+  }, [size, widthMultiplier]);
 
   const material = useMemo(() => {
     return new THREE.MeshStandardMaterial({
@@ -82,3 +93,5 @@ export function NorthArrow({
     />
   );
 }
+
+export default NorthArrow;

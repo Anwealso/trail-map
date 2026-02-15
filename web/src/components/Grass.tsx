@@ -23,8 +23,8 @@ export function Grass({ terrainSampler, count = 500000, trailSampler = null }: G
 
   // Create a tufted grass geometry (2 crossed blades)
   const geometry = useMemo(() => {
-    const height = 0.04;
-    const width = 0.006;
+    const height = 0.08; // Made grass taller (doubled from 0.04)
+    const width = 0.008; // Slightly wider for proportion
     const bladeGeo = new THREE.PlaneGeometry(width, height, 1, 4);
     bladeGeo.translate(0, height / 2, 0);
     

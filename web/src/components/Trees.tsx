@@ -10,7 +10,106 @@ interface TreesProps {
   count?: number;
 }
 
-export function Trees({ terrainSampler, count = 150 }: TreesProps) {
+// Round-top deciduous tree component
+function RoundTopTrees({ terrainSampler, count = 75 }: { terrainSampler: TerrainSampler; count?: number }) {
+  const trunkMeshRef = useRef<THREE.InstancedMesh>(null);
+  const foliageMeshRef = useRef<THREE.InstancedMesh>(null);
+  
+  const foliageMat = useMemo(() => createClayMaterial({ color: "#4a7c23", roughness: 0.9, bumpScale: 0.03 }), []);
+  const trunkMat = useMemo(() => createClayMaterial({ color: "#5d4037", roughness: 1.0, bumpScale: 0.03 }), []);
+
+  // Round-top tree geometry
+  const { foliageGeo, trunkGeo } = useMemo(() => {
+    // Straight trunk - taller and thinner
+    const trunk = new THREE.CylinderGeometry(0.012, 0.018, 0.25, 8);
+    trunk.translate(0, 0.125, 0);
+
+    // Round foliage - sphere for the top
+    const foliage = new THREE.SphereGeometry(0.14, 12, 10);
+    foliage.translate(0, 0.32, 0); // Sit on top of trunk
+
+    return { foliageGeo: foliage, trunkGeo: trunk };
+  }, []);
+
+  const { matrices, actualCount } = useMemo(() => {
+    const tempMatrices = new Float32Array(count * 16);
+    const tempObject = new THREE.Object3D();
+    
+    let minH = Infinity;
+    let maxH = -Infinity;
+    const points = terrainSampler.mapPoints;
+    for (const row of points) {
+      for (const p of row) {
+        if (p.gameZ < minH) minH = p.gameZ;
+        if (p.gameZ > maxH) maxH = p.gameZ;
+      }
+    }
+
+    const minTreeHeight = minH + (maxH - minH) * 0.15; // Slightly lower min for variety
+    const maxTreeHeight = minH + (maxH - minH) * 0.6; // Keep below snow line
+
+    let placedCount = 0;
+    const maxAttempts = count * 20;
+
+    const centerX = 5;
+    const centerZ = 5;
+    const radius = 4.8;
+
+    for (let i = 0; i < maxAttempts && placedCount < count; i++) {
+      // Pick a random point within the circle
+      const r_val = Math.sqrt(Math.random()) * radius;
+      const theta = Math.random() * 2 * Math.PI;
+      const x = centerX + r_val * Math.cos(theta);
+      const z = centerZ + r_val * Math.sin(theta);
+
+      const coord = Coordinate.fromGameCoords(x, z);
+      const h = terrainSampler.getHeightAt(coord);
+      
+      if (h >= minTreeHeight && h <= maxTreeHeight) {
+        // Use different noise frequency for variety
+        const noiseVal = worley2d(x * 0.95, z * 0.95);
+        if (noiseVal > 0.4) continue;
+
+        const wobble = simplex2d(x * 1.2, z * 1.2) * 0.05;
+        tempObject.position.set(x, h + wobble, z);
+        tempObject.rotation.y = Math.random() * Math.PI * 2;
+        // Round trees are slightly larger
+        const scale = 0.35 + Math.random() * 0.4;
+        tempObject.scale.set(scale, scale, scale);
+        
+        tempObject.updateMatrix();
+        tempObject.matrix.toArray(tempMatrices, placedCount * 16);
+        placedCount++;
+      }
+    }
+
+    return { matrices: tempMatrices.slice(0, placedCount * 16), actualCount: placedCount };
+  }, [terrainSampler, count]);
+
+  // Update instance matrices whenever they change (including on terrain change)
+  useEffect(() => {
+    const updateMesh = (mesh: THREE.InstancedMesh | null) => {
+      if (mesh) {
+        mesh.instanceMatrix.set(matrices);
+        mesh.instanceMatrix.needsUpdate = true;
+        mesh.count = actualCount;
+      }
+    };
+    
+    updateMesh(trunkMeshRef.current);
+    updateMesh(foliageMeshRef.current);
+  }, [matrices, actualCount]);
+
+  return (
+    <group>
+      <instancedMesh ref={trunkMeshRef} args={[trunkGeo, trunkMat, count]} frustumCulled={false} />
+      <instancedMesh ref={foliageMeshRef} args={[foliageGeo, foliageMat, count]} frustumCulled={false} />
+    </group>
+  );
+}
+
+// Pine tree component
+function PineTrees({ terrainSampler, count = 75 }: { terrainSampler: TerrainSampler; count?: number }) {
   const trunkMeshRef = useRef<THREE.InstancedMesh>(null);
   const foliage1MeshRef = useRef<THREE.InstancedMesh>(null);
   const foliage2MeshRef = useRef<THREE.InstancedMesh>(null);
@@ -118,3 +217,19 @@ export function Trees({ terrainSampler, count = 150 }: TreesProps) {
     </group>
   );
 }
+
+// Main Trees component that combines both types
+export function Trees({ terrainSampler, count = 150 }: TreesProps) {
+  // Split count between pine and round-top trees
+  const pineCount = Math.floor(count * 0.5);
+  const roundTopCount = Math.floor(count * 0.5);
+
+  return (
+    <group>
+      <PineTrees terrainSampler={terrainSampler} count={pineCount} />
+      <RoundTopTrees terrainSampler={terrainSampler} count={roundTopCount} />
+    </group>
+  );
+}
+
+export default Trees;

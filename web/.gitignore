@@ -10,10 +10,10 @@ env/
 *.hgt
 *.hgt.gz
 
-# Heightmap images
-*.png
-*.jpg
-*.jpeg
+# Heightmap images - ignore them in geotiff_data but allow in public
+geotiff_data/*.png
+geotiff_data/*.jpg
+geotiff_data/*.jpeg
 
 # Python cache
 __pycache__/

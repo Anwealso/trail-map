@@ -3,7 +3,7 @@ import { Canvas } from "@react-three/fiber";
 import { OrbitControls } from "@react-three/drei";
 import { Terrain } from "./components/Terrain";
 import { useTrailTexture } from "./utils/trailTexture";
-import { Pin } from "./components/Pin";
+import { Person } from "./components/Pin";
 import { NorthArrow } from "./components/NorthArrow";
 import { Grass } from "./components/Grass";
 import { Trees } from "./components/Trees";
@@ -355,7 +355,7 @@ export default function App() {
           />
         )}
         {terrainSampler && (
-          <Pin
+          <Person
             x={mapPosition.x}
             y={mapPosition.y}
             terrainSampler={terrainSampler}

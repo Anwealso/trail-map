@@ -11,18 +11,41 @@ interface PinProps {
   terrainSampler: TerrainSampler;
   color?: string;
   radius?: number;
+}
+
+interface PersonProps extends PinProps {
   heading?: number; // Device heading in degrees (0-360)
 }
 
-export function Pin({
-  x,
-  y,
-  terrainSampler,
-  color = "#d83d28",
-  radius = 0.1, // radius in game units
-  heading = 0,
-}: PinProps) {
+function usePinPosition(x: number, y: number, terrainSampler: TerrainSampler, height: number) {
   const [position, setPosition] = useState<THREE.Vector3 | null>(null);
+
+  useEffect(() => {
+    try {
+      const coordinate = Coordinate.fromWorldCoords(x, y);
+      const point: Point | null = terrainSampler.getClosestMapPoint(coordinate);
+      if (!point) {
+        console.error(
+          "Invalid pin position: requested pin location is off the map.",
+        );
+        return;
+      }
+      setPosition(
+        new THREE.Vector3(
+          point.threeX,
+          point.threeY + height / 2,
+          point.threeZ,
+        ),
+      );
+    } catch (error) {
+      console.error("Error setting pin position:", error);
+    }
+  }, [x, y, terrainSampler, height]);
+
+  return position;
+}
+
+function usePinGeometry(radius: number) {
   const height: number = useMemo(() => radius * 2, [radius]);
 
   // Calculate sphere radius that fits inside cone
@@ -51,6 +74,47 @@ export function Pin({
     merged.computeVertexNormals();
     return merged;
   }, [radius, height, sphereRadius, sphereOffset, coneAngle]);
+
+  return { pinGeometry, height, sphereRadius, sphereOffset };
+}
+
+export function Pin({
+  x,
+  y,
+  terrainSampler,
+  color = "#d83d28",
+  radius = 0.1, // radius in game units
+}: PinProps) {
+  const { pinGeometry, height } = usePinGeometry(radius);
+  const position = usePinPosition(x, y, terrainSampler, height);
+
+  const pinMaterial = useMemo(() => {
+    return new THREE.MeshStandardMaterial({
+      color: color,
+      roughness: 0.4,
+      metalness: 0.1,
+    });
+  }, [color]);
+
+  if (!position) return null;
+
+  return (
+    <group position={position}>
+      <mesh geometry={pinGeometry} material={pinMaterial} />
+    </group>
+  );
+}
+
+export function Person({
+  x,
+  y,
+  terrainSampler,
+  color = "#d83d28",
+  radius = 0.1, // radius in game units
+  heading = 0,
+}: PersonProps) {
+  const { pinGeometry, height, sphereRadius, sphereOffset } = usePinGeometry(radius);
+  const position = usePinPosition(x, y, terrainSampler, height);
 
   // Create arrow geometry - a simple flat triangle on top pointing forward (-Z)
   const arrowGeometry = useMemo(() => {
@@ -91,30 +155,6 @@ export function Pin({
     return geo;
   }, [radius, sphereRadius, sphereOffset]);
 
-  useEffect(() => {
-    try {
-      const coordinate = Coordinate.fromWorldCoords(x, y);
-      const point: Point | null = terrainSampler.getClosestMapPoint(coordinate);
-      if (!point) {
-        console.error(
-          "Invalid pin position: requested pin location is off the map.",
-        );
-        return;
-      }
-      setPosition(
-        new THREE.Vector3(
-          point.threeX,
-          point.threeY + height / 2,
-          point.threeZ,
-        ),
-      );
-    } catch (error) {
-      console.error("Error setting pin position:", error);
-    }
-  }, [x, y, terrainSampler, radius, height]);
-
-  // Calculate rotation based on heading
-  console.log('Pin heading prop:', heading);
   const rotationY = THREE.MathUtils.degToRad(-heading);
 
   const pinMaterial = useMemo(() => {

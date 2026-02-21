@@ -11,9 +11,10 @@ interface GrassProps {
   terrainSampler: TerrainSampler;
   count?: number;
   trailSampler?: TrailSampler | null;
+  showWater?: boolean;
 }
 
-export function Grass({ terrainSampler, count = 500000, trailSampler = null }: GrassProps) {
+export function Grass({ terrainSampler, count = 500000, trailSampler = null, showWater = true }: GrassProps) {
   const meshRef = useRef<THREE.InstancedMesh>(null);
   const material = useMemo(() => createGrassMaterial(), []);
   
@@ -130,8 +131,9 @@ export function Grass({ terrainSampler, count = 500000, trailSampler = null }: G
       
       const normalizedH = (h - minH) / Math.max(0.0001, maxH - minH);
       
-      // Start grass slightly above the water line (0.102)
-      if (normalizedH > 0.11 && normalizedH < 0.45) {
+      // Start grass slightly above the water line (0.102) if water is shown, otherwise start at bottom
+      const minGrassHeight = showWater ? 0.11 : -0.01;
+      if (normalizedH > minGrassHeight && normalizedH < 0.45) {
         // Density falloff near the top (100% at 0.25, 0% at 0.45)
         const topFadeStart = 0.25;
         const topFadeEnd = 0.45;
@@ -162,7 +164,7 @@ export function Grass({ terrainSampler, count = 500000, trailSampler = null }: G
       matrices: tempMatrices.slice(0, placedCount * 16), 
       actualCount: placedCount 
     };
-  }, [terrainSampler, count, trailSampler]);
+  }, [terrainSampler, count, trailSampler, showWater]);
 
   // Update instance matrices whenever they change (including on terrain change)
   useEffect(() => {

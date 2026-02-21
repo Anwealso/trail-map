@@ -383,8 +383,23 @@ export default function App() {
             showWater={showWater}
           />
         )}
-        {terrainSampler && trailSampler && <Grass key={`grass-${selectedTopology}`} terrainSampler={terrainSampler} count={400000} trailSampler={trailSampler} />}
-        {terrainSampler && <Trees key={`trees-${selectedTopology}`} terrainSampler={terrainSampler} count={300} />}
+        {terrainSampler && trailSampler && (
+          <Grass 
+            key={`grass-${selectedTopology}`} 
+            terrainSampler={terrainSampler} 
+            count={400000} 
+            trailSampler={trailSampler} 
+            showWater={showWater}
+          />
+        )}
+        {terrainSampler && (
+          <Trees 
+            key={`trees-${selectedTopology}`} 
+            terrainSampler={terrainSampler} 
+            count={300} 
+            showWater={showWater}
+          />
+        )}
         {terrainSampler && (
           <NorthArrow
             terrainSampler={terrainSampler}

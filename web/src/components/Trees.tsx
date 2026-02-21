@@ -8,10 +8,11 @@ import { Coordinate } from "../utils/Coordinate";
 interface TreesProps {
   terrainSampler: TerrainSampler;
   count?: number;
+  showWater?: boolean;
 }
 
 // Pine tree component
-function PineTrees({ terrainSampler, count = 75 }: { terrainSampler: TerrainSampler; count?: number }) {
+function PineTrees({ terrainSampler, count = 75, showWater = true }: { terrainSampler: TerrainSampler; count?: number; showWater?: boolean }) {
   const trunkMeshRef = useRef<THREE.InstancedMesh>(null);
   const foliage1MeshRef = useRef<THREE.InstancedMesh>(null);
   const foliage2MeshRef = useRef<THREE.InstancedMesh>(null);
@@ -51,7 +52,8 @@ function PineTrees({ terrainSampler, count = 75 }: { terrainSampler: TerrainSamp
       }
     }
 
-    const minTreeHeight = minH + (maxH - minH) * 0.2;
+    const minTreeHeightRatio = showWater ? 0.2 : 0.02;
+    const minTreeHeight = minH + (maxH - minH) * minTreeHeightRatio;
     const maxTreeHeight = minH + (maxH - minH) * 0.65; // Keep trees below snow line (starts at 0.7)
 
     let placedCount = 0;
@@ -92,7 +94,7 @@ function PineTrees({ terrainSampler, count = 75 }: { terrainSampler: TerrainSamp
     }
 
     return { matrices: tempMatrices.slice(0, placedCount * 16), actualCount: placedCount };
-  }, [terrainSampler, count]);
+  }, [terrainSampler, count, showWater]);
 
   // Update instance matrices whenever they change (including on terrain change)
   useEffect(() => {
@@ -121,10 +123,10 @@ function PineTrees({ terrainSampler, count = 75 }: { terrainSampler: TerrainSamp
 }
 
 // Main Trees component that combines both types
-export function Trees({ terrainSampler, count = 150 }: TreesProps) {
+export function Trees({ terrainSampler, count = 150, showWater = true }: TreesProps) {
   return (
     <group>
-      <PineTrees terrainSampler={terrainSampler} count={count} />
+      <PineTrees terrainSampler={terrainSampler} count={count} showWater={showWater} />
     </group>
   );
 }

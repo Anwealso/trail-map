@@ -1,9 +1,9 @@
 export const GAMEWORLD_RESOLUTION = 20;
 
 // View dimensions in real-world kilometres
-export let TOPOMAP_WORLD_SIZE_X = 10;
-export let TOPOMAP_WORLD_SIZE_Y = 10;
-export let TOPOMAP_WORLD_SIZE_Z = 0.889;
+export let TOPOMAP_WORLD_SIZE_X = 3;
+export let TOPOMAP_WORLD_SIZE_Y = 3;
+export let TOPOMAP_WORLD_SIZE_Z = 0.345; // Actual LiDAR elevation range in km (345m)
 
 // The size limits of the heightmap terrain in game units
 export const TOPOMAP_GAME_SIZE_LIMIT_X = 10;

@@ -5,6 +5,11 @@ export interface TopologyOption {
   name: string;
   file: string;
   description?: string;
+  viewWorldSize?: number; // Span of the view in world km
+  uCenter?: number; // Center of the view in heightmap image (0-1)
+  vCenter?: number; // Center of the view in heightmap image (0-1)
+  sourceWorldSizeX?: number; // Total world width of the source image in km
+  sourceWorldSizeY?: number; // Total world height of the source image in km
 }
 
 interface TopologySelectorProps {

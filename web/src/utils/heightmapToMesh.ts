@@ -145,28 +145,53 @@ export async function loadHeightmapImage(url: string): Promise<ImageData> {
 /**
  * Creates a 2D matrix of Point objects from heightmap image data.
  * Converts pixel coordinates to world coordinates using TOPOMAP_WORLD_SIZE constants.
- * X and Y span [0, TOPOMAP_WORLD_SIZE_X] and [0, TOPOMAP_WORLD_SIZE_Y] (original/uncentered).
  * @param imageData - The heightmap image data
+ * @param uCenter - Center of the window in UV space (0-1)
+ * @param vCenter - Center of the window in UV space (0-1)
+ * @param uSpan - Span of the window in U space
+ * @param vSpan - Span of the window in V space
  * @returns A 2D array of Point objects where [row][col] corresponds to [y][x] in the image
- * TODO: In the future this probably doesnt need to be proper Points, it can just be a dumb matrix
  */
 export function createPointMatrixFromHeightmap(
   imageData: ImageData,
+  uCenter: number = 0.5,
+  vCenter: number = 0.5,
+  uSpan: number = 1.0,
+  vSpan: number = 1.0,
 ): Point[][] {
   const imgWidth = imageData.width
   const imgHeight = imageData.height
 
   const matrix: Point[][] = []
 
+  const uMin = uCenter - uSpan / 2;
+  const vMin = vCenter - vSpan / 2;
+
   for (let iy = 0; iy < imgHeight; iy++) {
     const row: Point[] = []
     for (let ix = 0; ix < imgWidth; ix++) {
-      const idx = (iy * imgWidth + ix) * 4
-      const normalizedHeight = imageData.data[idx] / 255 // 255 because the grayscale pixel range is 0-255
+      // Current position in the window [0, 1]
+      const tu = ix / (imgWidth - 1);
+      const tv = iy / (imgHeight - 1);
 
-      // Original coords: map [0,1] to [0, TOPOMAP_WORLD_SIZE_X/Y]
-      const worldX = (ix / (imgWidth - 1)) * TOPOMAP_WORLD_SIZE_X;
-      const worldY = (iy / (imgHeight - 1)) * TOPOMAP_WORLD_SIZE_Y;
+      // Map window position back to absolute image UV
+      const u = uMin + tu * uSpan;
+      const v = vMin + tv * vSpan;
+
+      // Clamp UVs to [0, 1] to avoid out of bounds
+      const clampedU = Math.max(0, Math.min(1, u));
+      const clampedV = Math.max(0, Math.min(1, v));
+
+      const pixX = Math.round(clampedU * (imgWidth - 1));
+      const pixY = Math.round(clampedV * (imgHeight - 1));
+
+      const idx = (pixY * imgWidth + pixX) * 4
+      const normalizedHeight = imageData.data[idx] / 255 
+
+      // World coordinates for the resulting point matrix
+      // These span [0, TOPOMAP_WORLD_SIZE_X/Y]
+      const worldX = tu * TOPOMAP_WORLD_SIZE_X;
+      const worldY = tv * TOPOMAP_WORLD_SIZE_Y;
       const worldZ = normalizedHeight * TOPOMAP_WORLD_SIZE_Z;
 
       row.push(Point.fromWorldCoords(worldX, worldY, worldZ))
@@ -215,14 +240,22 @@ export function resamplePointMatrix(
  * The geometry is sized to match the game world dimensions (1x1 game units) and uses
  * GAMEWORLD_RESOLUTION to determine the mesh density.
  *
- * @param sampler - The terrain height sampler containing the point matrix
- * @returns A Three.js PlaneGeometry with heights sampled from the terrain heightmap
+ * @param imageUrl - URL of the heightmap image
+ * @param uCenter - Center of the window in UV space (0-1)
+ * @param vCenter - Center of the window in UV space (0-1)
+ * @param uSpan - Span of the window in U space
+ * @param vSpan - Span of the window in V space
+ * @returns A 2D array of Point objects where [row][col] corresponds to [y][x] in the image
  */
 export async function getFinalMapMeshPointMatrix(
-  imageUrl: string
+  imageUrl: string,
+  uCenter: number = 0.5,
+  vCenter: number = 0.5,
+  uSpan: number = 1.0,
+  vSpan: number = 1.0,
 ): Promise<Point[][]> {
   const imageData = await loadHeightmapImage(imageUrl)
-  const pointMatrixRaw = createPointMatrixFromHeightmap(imageData)
+  const pointMatrixRaw = createPointMatrixFromHeightmap(imageData, uCenter, vCenter, uSpan, vSpan)
   
   // Up the resolution using bilinear interpolation to reach the final mesh resolution
   const targetWidth = Math.ceil(GAMEWORLD_RESOLUTION * TOPOMAP_GAME_SIZE_LIMIT_X)

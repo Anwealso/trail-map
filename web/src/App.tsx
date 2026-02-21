@@ -20,6 +20,7 @@ import {
   TOPOMAP_GAME_SIZE_LIMIT_X,
   TOPOMAP_GAME_SIZE_LIMIT_Y,
   MAP_AUTO_ROTATE_ENABLED,
+  updateWorldScaling,
 } from "./utils/constants";
 import { TopologySelector, TopologyOption } from "./components/TopologySelector";
 import "./App.css";
@@ -31,12 +32,22 @@ const TOPOLOGY_OPTIONS: TopologyOption[] = [
     name: 'Mount Tibrogargan',
     file: 'mount_tibrogargan_heightmap.png',
     description: 'Glass House Mountains, Queensland, Australia (SRTM 30m)',
+    viewWorldSize: 3.0,
+    uCenter: 0.585,
+    vCenter: 0.267,
+    sourceWorldSizeX: 14.0,
+    sourceWorldSizeY: 17.0,
   },
   {
     id: 'default',
     name: 'Default Terrain',
     file: 'heightmap.jpg',
     description: 'Original test terrain',
+    viewWorldSize: 10.0,
+    uCenter: 0.5,
+    vCenter: 0.5,
+    sourceWorldSizeX: 10.0,
+    sourceWorldSizeY: 10.0,
   },
 ];
 
@@ -141,11 +152,25 @@ export default function App() {
     setIsTopologyLoading(true);
     setLoaded(false);
     
-    const selectedOption = TOPOLOGY_OPTIONS.find(opt => opt.id === selectedTopology);
-    const topologyFile = selectedOption?.file || TOPOLOGY_OPTIONS[0].file;
+    const selectedOption = TOPOLOGY_OPTIONS.find(opt => opt.id === selectedTopology) || TOPOLOGY_OPTIONS[0];
+    const topologyFile = selectedOption.file;
+    
+    // Update global world scaling for the selected map
+    const viewSize = selectedOption.viewWorldSize || 10.0;
+    updateWorldScaling(viewSize, viewSize);
+
+    // Calculate spans for sampling the heightmap
+    const uSpan = selectedOption.sourceWorldSizeX ? viewSize / selectedOption.sourceWorldSizeX : 1.0;
+    const vSpan = selectedOption.sourceWorldSizeY ? viewSize / selectedOption.sourceWorldSizeY : 1.0;
     
     const base = import.meta.env.BASE_URL;
-    getFinalMapMeshPointMatrix(`${base}${topologyFile}`).then((points) => {
+    getFinalMapMeshPointMatrix(
+      `${base}${topologyFile}`,
+      selectedOption.uCenter ?? 0.5,
+      selectedOption.vCenter ?? 0.5,
+      uSpan,
+      vSpan
+    ).then((points) => {
       setterrainSampler(createTerrainHeightSamplerFromPointMatrix(points));
       setIsTopologyLoading(false);
     }).catch((error) => {

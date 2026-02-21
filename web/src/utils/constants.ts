@@ -1,33 +1,39 @@
-export const GAMEWORLD_RESOLUTION = 20; // the number of points in our mesh per gameworld 1 "metre" unit
+export const GAMEWORLD_RESOLUTION = 20;
 
-// TODO: This should be passed in as an arg later but for now lets hardcode a 14km x 17km size
-// for our starter Mount Tibrogargan map here
-export const TOPOMAP_WORLD_SIZE_X = 14; // world units (kilometres)
-export const TOPOMAP_WORLD_SIZE_Y = 17; // world units (kilometres)
-export const TOPOMAP_WORLD_SIZE_Z = 0.889; // elevation range in km (from -5m to 884m)
+// View dimensions in real-world kilometres
+export let TOPOMAP_WORLD_SIZE_X = 10;
+export let TOPOMAP_WORLD_SIZE_Y = 10;
+export let TOPOMAP_WORLD_SIZE_Z = 0.889;
 
-// The size limits of the heightmap terrain in game units (will be scaled to fit within these limits)
-export const TOPOMAP_GAME_SIZE_LIMIT_X = 10; // game units
-export const TOPOMAP_GAME_SIZE_LIMIT_Y = 10; // game units
-export const TOPOMAP_GAME_SIZE_LIMIT_Z = 3; // game units (maximum allowed, but will use realistic scaling)
+// The size limits of the heightmap terrain in game units
+export const TOPOMAP_GAME_SIZE_LIMIT_X = 10;
+export const TOPOMAP_GAME_SIZE_LIMIT_Y = 10;
+export const TOPOMAP_GAME_SIZE_LIMIT_Z = 3;
 
-// Get the scaling factor for units from world to game and vice versa
-// First check which dimension is the limiting factor
-let world_to_game_scale_ratio: number;
-if (TOPOMAP_WORLD_SIZE_X >= TOPOMAP_WORLD_SIZE_Y) {
-  // Width (X size) is the limiting factor
-  world_to_game_scale_ratio = TOPOMAP_GAME_SIZE_LIMIT_X / TOPOMAP_WORLD_SIZE_X;
-} else {
-  // Height (y size) is the limiting factor
-  world_to_game_scale_ratio = TOPOMAP_GAME_SIZE_LIMIT_Y / TOPOMAP_WORLD_SIZE_Y;
+// Scaling factors - these need to be recalculatable
+export let WORLD_TO_GAME_SCALE_RATIO = 1.0;
+export let WORLD_TO_GAME_HEIGHT_SCALE_RATIO = 1.0;
+export let GAME_TO_WORLD_SCALE_RATIO = 1.0;
+export let GAME_TO_WORLD_HEIGHT_SCALE_RATIO = 1.0;
+
+export function updateWorldScaling(sizeX: number, sizeY: number, sizeZ: number = 0.889) {
+  TOPOMAP_WORLD_SIZE_X = sizeX;
+  TOPOMAP_WORLD_SIZE_Y = sizeY;
+  TOPOMAP_WORLD_SIZE_Z = sizeZ;
+
+  if (TOPOMAP_WORLD_SIZE_X >= TOPOMAP_WORLD_SIZE_Y) {
+    WORLD_TO_GAME_SCALE_RATIO = TOPOMAP_GAME_SIZE_LIMIT_X / TOPOMAP_WORLD_SIZE_X;
+  } else {
+    WORLD_TO_GAME_SCALE_RATIO = TOPOMAP_GAME_SIZE_LIMIT_Y / TOPOMAP_WORLD_SIZE_Y;
+  }
+
+  WORLD_TO_GAME_HEIGHT_SCALE_RATIO = WORLD_TO_GAME_SCALE_RATIO;
+  GAME_TO_WORLD_SCALE_RATIO = 1 / WORLD_TO_GAME_SCALE_RATIO;
+  GAME_TO_WORLD_HEIGHT_SCALE_RATIO = 1 / WORLD_TO_GAME_SCALE_RATIO;
 }
-export const WORLD_TO_GAME_SCALE_RATIO = world_to_game_scale_ratio;
 
-// Use uniform scaling for height to maintain realistic proportions (1:1 with horizontal)
-export const WORLD_TO_GAME_HEIGHT_SCALE_RATIO = world_to_game_scale_ratio;
-
-export const GAME_TO_WORLD_SCALE_RATIO = 1 / world_to_game_scale_ratio;
-export const GAME_TO_WORLD_HEIGHT_SCALE_RATIO = 1 / world_to_game_scale_ratio;
+// Initialize with default values
+updateWorldScaling(10, 10);
 
 export const GAUSSIAN_ENABLED = true;
 export const GAUSSIAN_KERNEL_SIZE = 5;

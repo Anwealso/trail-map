@@ -59,6 +59,7 @@ export default function App() {
   const autoRotateTimer = useRef<number | null>(null);
   const [loaded, setLoaded] = useState(false);
   const [selectedTopology, setSelectedTopology] = useState<string>(TOPOLOGY_OPTIONS[0].id);
+  const [showWater, setShowWater] = useState(false);
   const [isTopologyLoading, setIsTopologyLoading] = useState(false);
   const [gpsPosition, setGpsPosition] = useState<GPSPosition | null>(null);
   const [gpsError, setGpsError] = useState<string | null>(null);
@@ -312,6 +313,16 @@ export default function App() {
               <div>Lat: {gpsPosition.latitude.toFixed(6)}, Lng: {gpsPosition.longitude.toFixed(6)}</div>
               <div>Map: ({mapPosition.x.toFixed(2)}, {mapPosition.y.toFixed(2)}) {isInitialized ? "" : "(calibrating...)"}</div>
               <div>Heading: {deviceHeading.toFixed(1)}°</div>
+              <div style={{ marginTop: "10px", display: "flex", alignItems: "center", gap: "8px" }}>
+                <input
+                  type="checkbox"
+                  id="water-toggle"
+                  checked={showWater}
+                  onChange={(e) => setShowWater(e.target.checked)}
+                  style={{ cursor: "pointer" }}
+                />
+                <label htmlFor="water-toggle" style={{ cursor: "pointer", fontSize: "14px" }}>Show Water</label>
+              </div>
               {orientationPermission === "prompt" && (
                 <button
                   onClick={requestOrientationPermission}
@@ -369,6 +380,7 @@ export default function App() {
           <Terrain 
             mapPoints={terrainSampler.mapPoints} 
             trailTexture={trailTexture}
+            showWater={showWater}
           />
         )}
         {terrainSampler && trailSampler && <Grass key={`grass-${selectedTopology}`} terrainSampler={terrainSampler} count={400000} trailSampler={trailSampler} />}

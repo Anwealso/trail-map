@@ -16,6 +16,7 @@ interface TerrainProps {
   material?: THREE.Material;
   fadeFraction?: number;
   trailTexture?: THREE.Texture | null;
+  showWater?: boolean;
 }
 
 /**
@@ -125,11 +126,13 @@ export function createHeightmapGeometry(
 function addTerrainShader(mat: THREE.Material) {
   mat.userData.uHeightRange = { value: new THREE.Vector2(0, 1) };
   mat.userData.uTrailTexture = { value: null };
+  mat.userData.uShowWater = { value: 1.0 };
   mat.onBeforeCompile = (shader) => {
     shader.vertexShader = "#define TERRAIN_SHADER\n" + shader.vertexShader;
     shader.fragmentShader = "#define TERRAIN_SHADER\n" + shader.fragmentShader;
     shader.uniforms.uHeightRange = mat.userData.uHeightRange;
     shader.uniforms.uTrailTexture = mat.userData.uTrailTexture;
+    shader.uniforms.uShowWater = mat.userData.uShowWater;
     shader.vertexShader = shader.vertexShader.replace(
       "#include <common>",
       "#include <common>\nattribute float fade;\nvarying float vFade;\nvarying float vTerrainHeight;\nvarying vec2 vUv;",
@@ -140,7 +143,7 @@ function addTerrainShader(mat: THREE.Material) {
     );
     shader.fragmentShader = shader.fragmentShader.replace(
       "#include <common>",
-      "#include <common>\nvarying float vFade;\nvarying float vTerrainHeight;\nvarying vec2 vUv;\nuniform vec2 uHeightRange;\nuniform sampler2D uTrailTexture;",
+      "#include <common>\nvarying float vFade;\nvarying float vTerrainHeight;\nvarying vec2 vUv;\nuniform vec2 uHeightRange;\nuniform sampler2D uTrailTexture;\nuniform float uShowWater;",
     );
 
     const colorLogic = `
@@ -152,7 +155,7 @@ function addTerrainShader(mat: THREE.Material) {
       vec3 trailColor = vec3(1.0, 0.92, 0.23); // Yellowish trail
       
       float snowMask = smoothstep(0.7, 0.8, h);
-      float riverMask = 1.0 - smoothstep(0.098, 0.102, h); // Dramatically reduced edge blur
+      float riverMask = (1.0 - smoothstep(0.098, 0.102, h)) * uShowWater; // Dramatically reduced edge blur
       float trailMask = texture2D(uTrailTexture, vUv).r;
       
       diffuseColor.rgb = mix(diffuseColor.rgb, snowColor, snowMask);
@@ -172,7 +175,7 @@ function addTerrainShader(mat: THREE.Material) {
   };
 }
 
-export function Terrain({ mapPoints, material, trailTexture }: TerrainProps) {
+export function Terrain({ mapPoints, material, trailTexture, showWater = true }: TerrainProps) {
   const [geometry, setGeometry] = useState<THREE.BufferGeometry | null>(null);
   const [defaultMat] = useState(() => {
     const m = createClayMaterial({ color: "#b0e67e" });
@@ -187,6 +190,13 @@ export function Terrain({ mapPoints, material, trailTexture }: TerrainProps) {
       mat.needsUpdate = true;
     }
   }, [trailTexture, mat]);
+
+  useEffect(() => {
+    if (mat.userData.uShowWater) {
+      mat.userData.uShowWater.value = showWater ? 1.0 : 0.0;
+      mat.needsUpdate = true;
+    }
+  }, [showWater, mat]);
 
   useEffect(() => {
     const geom = createHeightmapGeometry(mapPoints, FADE_FRACTION);

@@ -27,16 +27,16 @@ import "./App.css";
 // Available topology files
 const TOPOLOGY_OPTIONS: TopologyOption[] = [
   {
-    id: 'default',
-    name: 'Default Terrain',
-    file: 'heightmap.jpg',
-    description: 'Original test terrain',
-  },
-  {
     id: 'tibrogargan',
     name: 'Mount Tibrogargan',
     file: 'mount_tibrogargan_heightmap.png',
     description: 'Glass House Mountains, Queensland, Australia (SRTM 30m)',
+  },
+  {
+    id: 'default',
+    name: 'Default Terrain',
+    file: 'heightmap.jpg',
+    description: 'Original test terrain',
   },
 ];
 

@@ -4,6 +4,7 @@ import { OrbitControls } from "@react-three/drei";
 import { Terrain } from "./components/Terrain";
 import { useTrailTexture } from "./utils/trailTexture";
 import { Person } from "./components/Pin";
+import { SummitMarker } from "./components/SummitMarker";
 import { NorthArrow } from "./components/NorthArrow";
 import { Grass } from "./components/Grass";
 import { Trees } from "./components/Trees";
@@ -352,6 +353,12 @@ export default function App() {
             terrainSampler={terrainSampler}
             size={0.4}
             widthMultiplier={3}
+          />
+        )}
+        {terrainSampler && (
+          <SummitMarker 
+            terrainSampler={terrainSampler} 
+            topologyId={selectedTopology} 
           />
         )}
         {terrainSampler && (

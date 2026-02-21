@@ -32,7 +32,7 @@ const TOPOLOGY_OPTIONS: TopologyOption[] = [
     name: 'Mount Tibrogargan',
     file: 'mount_tibrogargan_heightmap.png',
     description: 'Glass House Mountains, Queensland, Australia (SRTM 30m)',
-    viewWorldSize: 3.0,
+    viewWorldSize: 6.0,
     uCenter: 0.585,
     vCenter: 0.267,
     sourceWorldSizeX: 14.0,
